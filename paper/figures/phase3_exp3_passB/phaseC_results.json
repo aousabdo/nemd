@@ -1,0 +1,101 @@
+{
+  "config": {
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "n_epochs": 50,
+    "fs": 1000.0,
+    "n_samples": 1024
+  },
+  "nemd_big_head": {
+    "snr_3_db": {
+      "seed_42": {
+        "test_acc": 0.9599999785423279,
+        "n_params": 232198,
+        "wallclock_sec": 330.6405851659947
+      },
+      "seed_43": {
+        "test_acc": 0.95333331823349,
+        "n_params": 232198,
+        "wallclock_sec": 295.51575858402066
+      },
+      "seed_44": {
+        "test_acc": 0.9316666722297668,
+        "n_params": 232198,
+        "wallclock_sec": 294.330725042033
+      }
+    },
+    "snr_10_db": {
+      "seed_42": {
+        "test_acc": 0.95333331823349,
+        "n_params": 232198,
+        "wallclock_sec": 292.78267675003735
+      },
+      "seed_43": {
+        "test_acc": 0.9516666531562805,
+        "n_params": 232198,
+        "wallclock_sec": 290.635879959038
+      },
+      "seed_44": {
+        "test_acc": 0.8666666746139526,
+        "n_params": 232198,
+        "wallclock_sec": 338.8036526669748
+      }
+    },
+    "snr_20_db": {
+      "seed_42": {
+        "test_acc": 0.8966666460037231,
+        "n_params": 232198,
+        "wallclock_sec": 284.9246438749833
+      },
+      "seed_43": {
+        "test_acc": 0.9350000023841858,
+        "n_params": 232198,
+        "wallclock_sec": 280.46544312499464
+      },
+      "seed_44": {
+        "test_acc": 0.9366666674613953,
+        "n_params": 232198,
+        "wallclock_sec": 266.64372245798586
+      }
+    }
+  },
+  "nemd_scratch_lam0": {
+    "snr_10_db": {
+      "seed_42": {
+        "test_acc": 0.9750000238418579,
+        "n_params": 130310,
+        "wallclock_sec": 262.29860749997897
+      },
+      "seed_43": {
+        "test_acc": 0.9833333492279053,
+        "n_params": 130310,
+        "wallclock_sec": 268.0506612500176
+      },
+      "seed_44": {
+        "test_acc": 0.9599999785423279,
+        "n_params": 130310,
+        "wallclock_sec": 297.1776432499755
+      }
+    },
+    "snr_20_db": {
+      "seed_42": {
+        "test_acc": 0.9549999833106995,
+        "n_params": 130310,
+        "wallclock_sec": 278.81229358399287
+      },
+      "seed_43": {
+        "test_acc": 0.9916666746139526,
+        "n_params": 130310,
+        "wallclock_sec": 274.2500258749933
+      },
+      "seed_44": {
+        "test_acc": 0.8500000238418579,
+        "n_params": 130310,
+        "wallclock_sec": 264.1708585000015
+      }
+    }
+  }
+}

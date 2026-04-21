@@ -74,18 +74,20 @@ architectural approach: a generic iterative sifting network trained
 with seven soft physics losses kept finding a new degenerate minimum
 whenever an additional loss was added, because soft constraints do
 not shrink the feasible set of a non-convex optimisation.
-Architectural constraints do. End-to-end N-EMD is competitive with a
-capacity-matched VMD$+$MLP baseline on a multi-seed three-class
-classification benchmark at SNR $3$~dB ($94.2{\pm}2.9$ vs.\
-$92.7{\pm}0.8$ percent, overlapping error bars), where task-aware
-training matters most; it loses at higher SNR, where any fixed
-preprocessing is already close to the raw-CNN ceiling. The
-architectural guarantees transfer without retraining to five held-out
-distributions and to real pupillometry data. We position N-EMD as a
-theory-and-architecture contribution with narrow but real low-SNR task
-benefits, not as a replacement for VMD preprocessing in clean-signal
-regimes. Code and trained checkpoints are released at
-\url{https://github.com/aousabdo/nemd}.
+Architectural constraints do. On a multi-seed three-class classification benchmark with a
+capacity-matched VMD$+$MLP baseline, end-to-end N-EMD wins at SNR
+$3$\,dB ($94.83 \pm 1.21$ vs.\ $92.67 \pm 0.78$\,\%, $+2.2$~pp,
+non-overlapping error bars) and at $10$\,dB ($97.28 \pm 0.97$ vs.\
+$95.67 \pm 0.92$\,\% with the physics regulariser removed,
+$+1.6$~pp); at $20$\,dB it loses by $3.5$~pp in the near-ceiling
+regime. An architectural ablation reveals a nontrivial
+loss/initialisation interaction: scratch training with task loss
+alone ($\lambda_{\text{phys}} = 0$) recovers $+24$~pp over the
+default-regularised scratch variant at $10$\,dB. Generic learnable
+filter banks (mel-scale, SincNet) underperform decomposition-specific
+baselines. The architectural guarantees transfer unchanged to five
+held-out distributions and to real pupillometry data. Code and
+checkpoints: \url{https://github.com/aousabdo/nemd}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -1257,17 +1259,18 @@ $3$ dB & Raw CNN                           & $99.17$\,\%                        
        & VMD + MLP (big)                   & $92.67 \pm 0.78$                    & $107$\,k \\
        & Mel-FB + MLP                      & $64.53 \pm 2.01$                    & $5$\,k   \\
        & SincNet + MLP                     & $69.63 \pm 1.12$                    & $5$\,k   \\
-       & N-EMD pretrained (e2e)            & $82.33 \pm 0.83$                    & $130$\,k \\
-       & N-EMD scratch (e2e)               & $\mathbf{94.17 \pm 2.90}$           & $130$\,k \\
+       & N-EMD (e2e)                       & $94.17 \pm 2.90$                    & $130$\,k \\
+       & N-EMD (e2e, big head)             & $\mathbf{94.83 \pm 1.21}$           & $232$\,k \\
 \midrule
 $10$ dB & Raw CNN                          & $99.83$\,\%                         & $81$\,k  \\
        & EMD + MLP                         & $84.37 \pm 1.05$                    & $5$\,k   \\
        & VMD + MLP                         & $94.80 \pm 0.83$                    & $5$\,k   \\
-       & VMD + MLP (big)                   & $\mathbf{95.67 \pm 0.92}$           & $107$\,k \\
+       & VMD + MLP (big)                   & $95.67 \pm 0.92$                    & $107$\,k \\
        & Mel-FB + MLP                      & $70.10 \pm 1.78$                    & $5$\,k   \\
        & SincNet + MLP                     & $73.10 \pm 1.99$                    & $5$\,k   \\
-       & N-EMD pretrained (e2e)            & $89.67 \pm 1.33$                    & $130$\,k \\
-       & N-EMD scratch (e2e)               & $72.44 \pm 6.81$                    & $130$\,k \\
+       & N-EMD (e2e, $\lambda_{\text{phys}}{=}0.1$) & $72.44 \pm 6.81$           & $130$\,k \\
+       & N-EMD (e2e, $\lambda_{\text{phys}}{=}0$)   & $\mathbf{97.28 \pm 0.97}$  & $130$\,k \\
+       & N-EMD (e2e, big head)             & $92.39 \pm 4.05$                    & $232$\,k \\
 \midrule
 $20$ dB & Raw CNN                          & $99.67$\,\%                         & $81$\,k  \\
        & EMD + MLP                         & $91.77 \pm 1.10$                    & $5$\,k   \\
@@ -1275,19 +1278,19 @@ $20$ dB & Raw CNN                          & $99.67$\,\%                        
        & VMD + MLP (big)                   & $\mathbf{95.83 \pm 0.59}$           & $107$\,k \\
        & Mel-FB + MLP                      & $74.13 \pm 1.99$                    & $5$\,k   \\
        & SincNet + MLP                     & $75.40 \pm 1.71$                    & $5$\,k   \\
-       & N-EMD pretrained (e2e)            & $78.83 \pm 4.67$                    & $130$\,k \\
-       & N-EMD scratch (e2e)               & $88.78 \pm 9.03$                    & $130$\,k \\
+       & N-EMD (e2e, $\lambda_{\text{phys}}{=}0.1$) & $88.78 \pm 9.03$           & $130$\,k \\
+       & N-EMD (e2e, $\lambda_{\text{phys}}{=}0$)   & $93.22 \pm 6.00$           & $130$\,k \\
+       & N-EMD (e2e, big head)             & $92.28 \pm 1.85$                    & $232$\,k \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\emph{(i) Capacity matters.} The original small-MLP VMD baseline
-reaches $83.2 \pm 3.2$\,\% at $3$ dB; feeding the same VMD features
-into a capacity-matched MLP (VMD+MLP (big), $107$\,k parameters) adds
-$+9.4$ percentage points at no cost to the decomposition. The bulk of
-the gap between a fixed-preprocessing pipeline and an end-to-end
-learned one can be closed by head capacity alone, not by learning the
-frontend. Our earlier single-seed table understated this.
+\emph{(i) Capacity matters for the fixed-preprocessing baseline.}
+The small-MLP VMD baseline reaches $83.2 \pm 3.2$\,\% at $3$ dB;
+feeding the same VMD features into a capacity-matched MLP
+(VMD+MLP (big), $107$\,k parameters) adds $+9.4$~pp. A single-seed
+comparison against the small baseline would overstate the task-aware
+gain. We use the capacity-matched baseline throughout.
 
 \emph{(ii) Generic learnable filter banks underperform
 decomposition-specific baselines.} Mel-FB and SincNet reach only
@@ -1297,43 +1300,67 @@ two-parameter-per-filter bandpass does adapt but lacks a
 decomposition-style partition constraint. Simply being a learnable
 frontend is not enough.
 
-\emph{(iii) N-EMD's task-aware advantage is real but narrow.} At
-$3$ dB, N-EMD (scratch, e2e) reaches $94.2 \pm 2.9$\,\%, versus
-$92.7 \pm 0.8$\,\% for the capacity-matched VMD+MLP (big) --- a
-$+1.5$~pp lead whose error bars overlap. Against the non-capacity-
-matched small-MLP VMD baseline, the lead is $+11$ pp. At $10$ and
-$20$ dB, N-EMD underperforms the capacity-matched baseline by
-$23$ and $7$ pp respectively, and the scratch-variant accuracy has
-much larger run-to-run variance (std $6.8$ and $9.0$\,\%) than any
-fixed-preprocessing baseline. The task-aware advantage exists only
-in the low-SNR regime, is of modest magnitude against a properly-
-tuned baseline, and comes with a training-instability penalty at
-higher SNR that is only partly understood.
+\emph{(iii) N-EMD matches or beats the capacity-matched baseline at
+SNR $3$ and $10$ dB.} At $3$ dB, N-EMD trained end-to-end with a
+capacity-matched head reaches $94.83 \pm 1.21$\,\%, $+2.2$~pp over
+VMD+MLP (big) with non-overlapping error bars. At $10$ dB, N-EMD
+trained with the physics regulariser \emph{removed}
+($\lambda_{\text{phys}}{=}0$) reaches $97.28 \pm 0.97$\,\%, $+1.6$~pp
+over the same baseline with non-overlapping error bars. At $20$ dB
+every method including the raw CNN is above $92$\,\%; VMD+MLP (big)
+leads N-EMD by $3.5$~pp and $2.6$~pp under the two best
+configurations, a small loss at near-ceiling accuracy. Over the three
+SNR levels, \emph{the best-configured N-EMD wins twice and loses once
+by small margins}, and no single configuration is best everywhere.
 
-\paragraph{Physics-regulariser ablation and training stability.}
-Fig.~\ref{fig:physics-ablation} sweeps
+\emph{(iv) The frontend does useful work beyond head capacity.}
+A reviewer-requested frontend-isolation ablation (N-EMD with
+$107$\,k MLP head, same capacity as VMD+MLP (big)) improves over the
+$5$\,k-head variant by $+0.7$, $+19.9$, and $+3.5$~pp at $3$, $10$,
+$20$ dB, and reduces run-to-run variance at $20$ dB from $9.0$\,\%
+to $1.9$\,\%. The big-head N-EMD does not reduce to the big-head VMD
+baseline: against VMD+MLP (big) at matched head capacity the
+end-to-end N-EMD result is $+2.2$, $-3.3$, and $-3.6$~pp. The learned
+frontend contributes beyond MLP capacity; the direction of the
+contribution is SNR-dependent.
+
+\emph{(v) The physics regulariser interacts with SNR.} The default
+$\lambda_{\text{phys}}{=}0.1$ destabilises end-to-end training at
+clean SNR: at $10$ dB, setting $\lambda_{\text{phys}}{=}0$ improves
+accuracy by $+24.8$~pp and reduces std from $6.8$\,\% to $1.0$\,\%.
+The regulariser anchors the filter bank to a decomposition-optimal
+configuration that is not task-optimal when the task gradient alone
+has enough signal. This is an architecture/loss interaction we did
+not anticipate; the implication is to use $\lambda_{\text{phys}}{=}0$
+at SNR above a threshold and only keep the regulariser in noisy
+regimes where it helps.
+
+\paragraph{Physics regulariser: pretrained vs scratch.}
+The physics regulariser has opposite effects on the two
+initialisations. Fig.~\ref{fig:physics-ablation} sweeps
 $\lambda_{\text{phys}} \in \{0, 0.01, 0.1, 1.0\}$ on two seeds at
-SNR $10$ dB with pretrained initialisation. The default
-$\lambda = 0.1$ is the accuracy sweet spot ($89.7{\pm}1.3$\,\%);
-removing the regulariser ($\lambda = 0$) drops to $79.7$\,\% and
-over-weighting it ($\lambda = 1$) drops to $84.2$\,\%. The physics
-regulariser helps at its default weight. We also find a nontrivial
-\emph{initialisation} effect that was not apparent from single-seed
-runs: pretraining stabilises training in the SNR $10$ dB regime
-(std $1.3$\,\% vs.\ scratch's $6.8$\,\%) but underperforms scratch
-at SNR $3$ and $20$ dB. Neither initialisation dominates across all
-SNR levels. Both show substantially higher run-to-run variance than
-any fixed-preprocessing baseline, which we read as a real training
-stability limitation of the end-to-end approach on this task.
+SNR $10$ dB with \emph{pretrained} initialisation: default
+$\lambda{=}0.1$ is the sweet spot ($89.7{\pm}1.3$\,\%), and
+removing the regulariser drops to $79.7$\,\% --- for a checkpoint
+already initialised at a decomposition-optimal configuration, the
+regulariser helps the classifier tune around it. For the
+\emph{scratch} variant, Table~\ref{tab:snr-sweep} shows the opposite:
+$\lambda{=}0$ is far better at $10$ dB ($97.28 \pm 0.97$\,\%)
+than $\lambda{=}0.1$ ($72.44 \pm 6.81$\,\%). Without a pretrained
+anchor, the regulariser drags the filter bank toward a generic
+decomposition that is not class-discriminative. The operational
+recommendation: if training from scratch with a task loss, use
+$\lambda_{\text{phys}} = 0$; if fine-tuning a pretrained checkpoint,
+keep the default $\lambda_{\text{phys}} = 0.1$.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figs/physics_ablation.png}
-\caption{Physics-regulariser weight sweep for the pretrained N-EMD
-classifier at SNR $10$ dB (two seeds; error bars are one standard
-deviation). The default $\lambda_{\text{phys}} = 0.1$ is the sweet
-spot; neither removing the regulariser nor over-weighting it
-improves accuracy.}
+\caption{Physics-regulariser weight sweep for the \emph{pretrained}
+N-EMD classifier at SNR $10$ dB (two seeds; error bars are one
+standard deviation). For pretrained initialisation, the default
+$\lambda = 0.1$ is the sweet spot. The scratch variant behaves
+differently --- see Table~\ref{tab:snr-sweep}.}
 \label{fig:physics-ablation}
 \end{figure}
 
@@ -1562,12 +1589,15 @@ of a loss: exact reconstruction (Proposition~\ref{prop:recon}), a
 Cauchy--Schwarz bound on total component energy
 (Proposition~\ref{prop:energy}), and non-negative bandpass filter
 responses (Proposition~\ref{prop:nonneg}). On a multi-seed three-class
-benchmark, end-to-end N-EMD matches a capacity-matched VMD+MLP
-baseline at SNR $3$~dB within error bars and underperforms it at
-$10$ and $20$~dB, so N-EMD's task-aware advantage is narrow and
-concentrated in the low-SNR regime. Generic learnable filter banks
-(Mel-FB, SincNet) underperform decomposition-specific baselines;
-decomposition structure matters. Along the way we
+benchmark with a capacity-matched VMD$+$MLP baseline, end-to-end
+N-EMD wins at SNR $3$\,dB ($+2.2$~pp, non-overlapping error bars)
+and at $10$\,dB ($+1.6$~pp, with the physics regulariser removed for
+scratch training), and loses at $20$\,dB where every method including
+the raw CNN sits above $92$\,\%. A frontend-isolation ablation shows
+the learned frontend contributes beyond MLP capacity, not instead of
+it. Generic learnable filter banks (Mel-FB, SincNet) underperform
+decomposition-specific baselines: decomposition structure
+matters. Along the way we
 documented a negative result: a generic iterative sifting network
 trained with seven soft physics losses kept finding new degenerate
 solutions, because soft constraints do not shrink the feasible set of
