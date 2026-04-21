@@ -223,37 +223,73 @@ time-frequency ridge and then reconstructs components by integration.
 All of these methods produce interpretable decompositions but are not
 differentiable and not task-adaptive.
 
+\subsection{Learned Filter Banks and Differentiable Frontends}
+
+Several threads of prior work produce interpretable, differentiable
+filter banks; N-EMD is positioned relative to each.
+
+\emph{SincNet}~\cite{ravanelli2018sincnet} parameterises the first
+layer of a speech-recognition model as a bank of sinc-windowed
+bandpass filters, each specified by two learnable cutoffs. The
+filters are interpretable and differentiable, but the bank does
+not satisfy any partition-of-unity identity; applying the full bank
+to a signal does not reconstruct it.
+\emph{LEAF}~\cite{zeghidour2021leaf} extends this idea with
+parametric Gabor filters, per-band compression, and learnable
+downsampling; it is tuned for classification rather than
+decomposition and also does not guarantee reconstruction.
+\emph{Pariente et al.}~\cite{pariente2020filterbank} construct a
+fully-learnable analysis--synthesis filter bank for speech separation,
+with an explicit synthesis stage that approximately inverts the
+analysis; reconstruction is empirical, not a structural property.
+\emph{Scattering networks}~\cite{bruna2013invariant,anden2014scattering}
+apply cascaded fixed wavelet transforms with provable
+stability-to-deformation bounds; hybrid learnable variants
+exist~\cite{oyallon2018scatlearn}. Scattering is not a decomposition
+in the EMD/VMD sense --- components are not signals of the same length
+as the input --- and reconstruction from scattering coefficients is
+itself a non-trivial inverse problem. \emph{Learnable wavelet
+packets}~\cite{recoskie2018learnablewavelet} use the dyadic tree of
+classical wavelets with learnable filter taps; reconstruction holds
+under the perfect-reconstruction (PR) conditions from multirate
+signal processing~\cite{vaidyanathan1993mrsp,vetterli1995wc}, but
+the partition is dyadic rather than data-adaptive.
+
+N-EMD differs from all of the above in one specific way: the filter
+responses are produced by a neural analyzer conditioned on the
+\emph{current input} (not just by learned parameters shared across
+inputs), and a softmax across the filter axis enforces
+$\sum_{k} H_{k}(f) = 1$ at every frequency bin. This combination
+yields exact reconstruction by identity (not by a PR condition on the
+taps) and a Cauchy--Schwarz bound on total component energy that holds
+for any input. The closest existing mechanism is the softmax gating of
+mixture-of-experts models~\cite{jacobs1991moe}, transposed from expert
+routing to per-frequency filter weighting.
+
 \subsection{Learned Signal Decomposition}
 
 Attempts to make EMD differentiable or to learn decomposition directly
-have been sparse. Where they exist, they tend to drop one of the
-desiderata: either the decomposition is implicit inside the network
-(no bandpass structure that can be plotted or related to physical
-frequencies), or the reconstruction identity is approximate (a hidden
-residual soaks up the error), or task-awareness is absent. To the best
-of our knowledge, no prior work provides a differentiable decomposition
-with \emph{exact} reconstruction, non-negative bandpass filter
-responses, and task-aware training jointly.
+have been comparatively sparse. Where they exist, they tend to relax
+one of the desiderata: either the decomposition is implicit inside a
+black-box network (no bandpass structure that can be plotted), or the
+reconstruction identity is approximate (a hidden residual absorbs the
+error), or the decomposition is fixed once for the training
+distribution rather than adapted per input. N-EMD's specific claim is
+to produce exact reconstruction, per-frequency non-negative bandpass
+weights summing to one, input-adaptive filter responses, and
+differentiability jointly. We have not found a prior method with this
+exact set of properties, though the individual ingredients (learnable
+bandpass filters, softmax partitions, adaptive-per-input networks)
+each appear in the literature above.
 
 \subsection{Differentiable Signal Processing}
 
-The differentiable DSP line of work, notably DDSP~\cite{engel2020ddsp},
-incorporates explicit signal-processing structure --- oscillators,
-filters, noise generators --- into neural networks, improving
-interpretability and sample efficiency over end-to-end black boxes.
-SincNet~\cite{ravanelli2018sincnet} parameterises the first layer of a
-speech-recognition model as a bank of sinc-windowed bandpass filters
-with learnable cutoffs. Pariente et al.~\cite{pariente2020filterbank}
-showed that a fully learnable analysis-synthesis filter bank improves
-on STFT baselines for speech separation. N-EMD sits in this same
-tradition. Our architectural claim --- that a softmax partition over
-$K$ learned responses gives a sum-to-one filter bank with exact
-reconstruction --- is, to our knowledge, new as a parameterisation for
-signal decomposition. The softmax-as-gating construction has a long
-history in mixture-of-experts models~\cite{jacobs1991moe}; what is new
-here is the realisation that the same algebra turns a generic
-frequency-domain network into a decomposition method with structural
-guarantees.
+The differentiable DSP line of work~\cite{engel2020ddsp} incorporates
+explicit signal-processing structure --- oscillators, filters, noise
+generators --- into neural networks to improve interpretability and
+sample efficiency over end-to-end black boxes. N-EMD sits in this same
+tradition: the forward pass is an rFFT, a convolutional analyzer, a
+softmax, and an irFFT, with no unexplained operations.
 
 \subsection{Physics-Informed Machine Learning}
 
@@ -445,6 +481,26 @@ rate) with no modification, since $\lvert S\rvert$ and $\angle S$ are
 the only inputs. The trained checkpoint used throughout the paper was
 optimised at $T = 512$, $f_{s} = 512$ Hz and is applied at $T = 1024$,
 $f_{s} = 1000$ Hz without retraining.
+\end{remark}
+
+\begin{remark}[Phase channel]
+Including the phase $\angle S$ alongside $\lvert S\rvert$ lets the
+analyzer distinguish signals with identical power spectra but
+different temporal structure (e.g., a steady tone vs.\ a matched-energy
+chirp). A magnitude-only ablation is a natural future check.
+\end{remark}
+
+\begin{remark}[On the name \emph{N-EMD}]
+The mechanism here is a one-shot global filter bank, not EMD's
+iterative envelope sifting. We retain the EMD framing because (i) EMD
+was itself characterised as an adaptive filter bank on stochastic
+input~\cite{flandrin2004emdfilterbank}, so the interpretive role of
+an IMF as a narrow-band oscillatory component is the role our filters
+produce, and (ii) the output shape (ordered bandpass components) is
+the one classical-EMD users already know how to read. Readers who
+prefer a mechanism-level name may read the contribution as a
+\emph{neural adaptive filter bank with exact reconstruction}; nothing
+in the theory or experiments depends on the label.
 \end{remark}
 
 % ---------------------------------------------------------------------
@@ -954,11 +1010,58 @@ end-to-end training wins and where it loses. Section~\ref{subsec:pupil}
 extends the decomposition quality result to real biomedical data
 (pupillometry). Section~\ref{subsec:cost} reports computational cost.
 
-All experiments use the same trained checkpoint
-(\texttt{checkpoints\_p25b\_v3}), $K = 3$, $d = 64$ hidden channels,
+All experiments use the same trained analyzer checkpoint (the one
+released with the repository), $K = 3$, $d = 64$ hidden channels,
 three residual blocks --- the architecture of Section~\ref{sec:method}.
-Baselines (EMD, VMD) use standard reference implementations with
-$K = 3$ modes to match.
+Baselines use standard reference implementations with $K = 3$ modes to
+match: EMD via the \texttt{EMD-signal} library with its default sifting
+parameters and VMD via \texttt{vmdpy} with penalty parameter
+$\alpha = 2000$ and dual ascent step $\tau = 0$, both library defaults.
+
+\subsection{Evaluation Metrics}
+\label{subsec:metrics}
+
+Three quantitative metrics appear throughout. For a set of $K$
+components $\{c_{k}\}$ and the original signal $s$:
+
+\emph{Orthogonality index (OI)}:
+\begin{equation}
+\mathrm{OI} \;=\;
+ \frac{2\sum_{i < j} \lvert\langle c_{i}, c_{j}\rangle\rvert}%
+      {\sum_{k}\|c_{k}\|_{2}^{2}} .
+\label{eq:oi}
+\end{equation}
+A perfect orthogonal decomposition has $\mathrm{OI} = 0$.
+
+\emph{Energy ratio}:
+\begin{equation}
+\mathrm{ER} \;=\;
+ \frac{\sum_{k}\|c_{k}\|_{2}^{2}}{\|s\|_{2}^{2}} .
+\label{eq:er}
+\end{equation}
+Parseval-type energy conservation corresponds to $\mathrm{ER} = 1$.
+Values $>1$ indicate energy inflation; values $<1$ indicate signal
+content lost to a residual or to destructive overlap.
+
+\emph{Mode-mixing index (MMI)}: when ground-truth components
+$\{g_{\ell}\}_{\ell = 1}^{L}$ are available (synthetic benchmarks),
+assign each $g_{\ell}$ to its best-correlated estimated component and
+report
+\begin{equation}
+\mathrm{MMI} \;=\;
+ \frac{1}{L}\sum_{\ell=1}^{L}
+ \left(
+   1 - \max_{k}
+   \frac{\lvert\langle g_{\ell}, c_{k}\rangle\rvert}
+        {\|g_{\ell}\|_{2}\,\|c_{k}\|_{2}}
+ \right) .
+\label{eq:mmi}
+\end{equation}
+$\mathrm{MMI} \in [0, 1]$: zero means every ground-truth component is
+recovered cleanly inside some IMF; one means no IMF correlates
+appreciably with any ground-truth component. The metric is
+assignment-based (each $g_{\ell}$ picks its best match), so two true
+components mapping to the same IMF are penalised as mixing.
 
 % ---------------------------------------------------------------------
 \subsection{Decomposition Quality on Nonstationary Signals}
@@ -1107,7 +1210,7 @@ centroid, and spectral bandwidth ($9$ features); an MLP
 $9 \to 64 \to 64 \to 3$ is trained on the cached features ($4{,}995$
 parameters). (3)~\emph{VMD+MLP (fixed)}: same as (2) with VMD.
 (4)~\emph{N-EMD pretrained + MLP (end-to-end)}: the filter bank is
-initialised from the \texttt{p25b\_v3} checkpoint and the entire
+initialised from the released checkpoint and the entire
 pipeline (analyzer + filters + feature extraction + MLP) is fine-tuned
 with cross-entropy plus a $0.1{\times}$ physics regulariser
 ($130{,}310$ parameters). (5)~\emph{N-EMD scratch + MLP
@@ -1164,10 +1267,17 @@ N-EMD's end-to-end training can re-tune the filter bank to preserve
 task-relevant structure at the noise level it sees. At high SNR, VMD
 produces clean features without any tuning, and N-EMD's slightly
 weaker mode separation (acknowledged in
-Section~\ref{subsec:generalization}) becomes the bottleneck. The
-practical implication is that task-aware learned decomposition is most
-valuable where fixed preprocessing degrades most: in noisy operating
-conditions.
+Section~\ref{subsec:generalization}) becomes the bottleneck.
+A second pattern is the pretrained-variant collapse: accuracy falls
+from $0.895$ at $3$ dB to $0.72$ at $10$ and $20$ dB. The most
+plausible reading is that the $0.1{\times}$ physics regulariser anchors
+the analyzer near its decomposition-optimal configuration while the
+task gradient tries to adapt it to a cleaner regime; the regulariser
+then actively fights the classifier. The scratch variant, without the
+anchor, does not show the collapse. Sweeping the regulariser weight is
+the obvious fix and is future work. The practical implication: N-EMD
+is most valuable where fixed preprocessing degrades most --- low SNR
+--- and fixed VMD$+$MLP is the right choice at high SNR.
 
 \begin{figure}[t]
 \centering
@@ -1279,7 +1389,7 @@ biomedical data without retraining.}
 \label{fig:pupil-decomp}
 \end{figure}
 
-\paragraph{Classification is not informative.}
+\paragraph{Classification is a dataset-level null.}
 On the canonical three-class (attention condition) and six-class
 (condition $\times$ subject-group) classification tasks defined for the
 dataset, none of the five pipelines reaches above chance by a
@@ -1289,11 +1399,18 @@ $0.372 \pm 0.008$, N-EMD pretrained $0.330 \pm 0.014$, N-EMD scratch
 $0.351 \pm 0.018$ --- all within $\pm 4$ percentage points of chance
 ($1/3$). Six-class accuracies are similarly uninformative (all below
 $0.26$ against chance $1/6 \approx 0.167$, $<\!10$~pp above chance).
-The decomposition methods transfer cleanly; the classification task
-itself, on pupil response alone without additional covariates,
-appears not to be separable by any of the tested pipelines. The
-positive result is that N-EMD's guarantees hold on real data; the
-negative result is honest.
+The null is consistent across all five pipelines, including the
+non-interpretable raw-CNN ceiling --- a strong indication that single
+pupillary-response traces alone, without concurrent behavioural or
+physiological covariates, carry insufficient class-discriminative
+information. We therefore read this experiment as a decomposition-quality
+transfer result rather than a downstream-task result: N-EMD's
+architectural guarantees hold on real biomedical data
+(Fig.~\ref{fig:pupil-decomp} and the OI/ER numbers above) without
+retraining, but separating this particular set of experimental
+conditions is not doable by decomposition-then-classify with any of
+the methods we tested. A real-world task win is a natural next step
+and is outside the scope of this paper.
 
 % ---------------------------------------------------------------------
 \subsection{Computational Cost}
@@ -1380,16 +1497,35 @@ chirps must be tracked as units. A two-stage pipeline that feeds
 N-EMD's bandpass output into a ridge extractor is a promising
 combination.
 
+\paragraph{Scope of the experimental claims.}
+The task-aware benchmark is synthetic and frequency-decomposable by
+construction, which is a favourable setting for any bandpass-based
+pipeline; we do not generalise the $3$~dB win to broader task families.
+The pupillometry experiment contributes a decomposition-quality
+transfer result on real biomedical data but no classification win. A
+real-world task --- one where a decomposition-based pipeline has reason
+to beat an end-to-end classifier --- is the natural next experiment.
+Table~III reports single-seed numbers per pipeline; multi-seed
+confidence intervals are in preparation and we expect them to widen
+the reported gaps modestly without changing the qualitative pattern.
+
 \paragraph{Future work.}
 Four directions stand out. (i)~Adaptive $K$ via learned stopping.
 (ii)~Joint time-frequency partition for long nonstationary recordings.
-(iii)~Domain adaptation: a companion astrophysics paper, currently in
-preparation, applies the method to pulsar timing residuals with a
-fine-tuning step on observation-specific red noise; the partition-of-
-unity structure lets that fine-tuning preserve reconstruction and
-energy bounds by construction. (iv)~Probabilistic extensions in which
-the softmax partition is replaced by a distribution over partitions,
-which would quantify decomposition uncertainty in low-SNR regimes.
+(iii)~Smooth contiguous-band parameterisations: the current softmax is
+free to allocate non-contiguous frequency support to a single IMF,
+which is efficient but can look fragmented when visualised. An
+explicit parameterisation in terms of learnable centre-frequency and
+bandwidth pairs (or ordered cut-points on the Nyquist axis) would
+force contiguous bandpass filters at the cost of some expressivity;
+the trade-off is worth studying. (iv)~Domain adaptation: a companion
+astrophysics paper, currently in preparation, applies the method to
+pulsar timing residuals with a fine-tuning step on observation-specific
+red noise; the partition-of-unity structure lets that fine-tuning
+preserve reconstruction and energy bounds by construction.
+(v)~Probabilistic extensions in which the softmax partition is
+replaced by a distribution over partitions, which would quantify
+decomposition uncertainty in low-SNR regimes.
 
 % =====================================================================
 \section{Conclusion}
@@ -1492,7 +1628,7 @@ adds $4{,}995$ parameters.
 
 \begin{table}[h]
 \centering
-\caption{Training hyperparameters for the \texttt{p25b\_v3} checkpoint.}
+\caption{Training hyperparameters for the released analyzer checkpoint.}
 \label{tab:hparams}
 \begin{tabular}{lr}
 \toprule
