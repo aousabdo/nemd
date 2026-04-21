@@ -378,53 +378,52 @@ architecture is illustrated in Fig.~\ref{fig:arch}.
 
 \begin{figure*}[t]
 \centering
-\resizebox{0.95\textwidth}{!}{%
-\begin{tikzpicture}[>=Stealth, node distance=7mm and 8mm,
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[>=Stealth, node distance=14mm and 16mm,
+  every node/.style = {font=\small},
   block/.style  = {rectangle, draw, thick, rounded corners=1pt,
-                   minimum height=9mm, minimum width=17mm,
+                   minimum height=11mm, minimum width=26mm,
                    align=center, fill=blue!4},
-  op/.style     = {rectangle, draw, thick, minimum height=9mm,
-                   minimum width=12mm, align=center, fill=gray!6},
-  io/.style     = {rectangle, draw, thick, minimum height=9mm,
-                   minimum width=16mm, align=center, fill=yellow!10},
+  op/.style     = {rectangle, draw, thick, minimum height=11mm,
+                   minimum width=16mm, align=center, fill=gray!6},
+  io/.style     = {rectangle, draw, thick, minimum height=11mm,
+                   minimum width=20mm, align=center, fill=yellow!10},
   arrow/.style  = {->, thick},
 ]
-  \node[io] (sig) {$s \in \R^{T}$};
+  \node[io] (sig) {$s\in\R^{T}$};
   \node[op, right=of sig] (fft) {$\rFFT$};
   \node[op, right=of fft] (magph)
-    {$\bigl[\lvert S\rvert,\ \angle S\bigr]$};
+    {$\lvert S\rvert,\ \angle S$};
   \node[block, right=of magph] (analyzer)
-    {Signal Analyzer $f_{\theta}$\\ (1D CNN)};
+    {Signal Analyzer\\$f_{\theta}$~(1D CNN)};
   \node[op, right=of analyzer] (softmax)
-    {$\softmax_{K}\!\bigl(\,\cdot / \tau\bigr)$};
+    {$\softmax_{K}(\cdot/\tau)$};
   \node[op, right=of softmax] (prod)
     {$H_{k}(f)\,S(f)$};
-  \node[op, right=of prod] (ifft)
-    {$\irFFT$};
-  \node[io, right=of ifft] (out)
-    {$c_{k} \in \R^{T}$\\$k=1,\ldots,K$};
+  \node[op, right=of prod] (ifft) {$\irFFT$};
+  \node[io, right=of ifft] (out) {$c_{k}\in\R^{T}$};
 
   \draw[arrow] (sig) -- (fft);
-  \draw[arrow] (fft) -- node[above, font=\scriptsize] {$S\in\C^{N}$} (magph);
-  \draw[arrow] (magph) -- node[above, font=\scriptsize]
-    {$\R^{2\times N}$} (analyzer);
-  \draw[arrow] (analyzer) -- node[above, font=\scriptsize]
-    {$s_{k}(f)\in\R^{K\times N}$} (softmax);
-  \draw[arrow] (softmax) -- node[above, font=\scriptsize]
-    {$H_{k}(f)$} (prod);
+  \draw[arrow] (fft) -- node[above=1pt, font=\footnotesize]{$S$} (magph);
+  \draw[arrow] (magph) -- (analyzer);
+  \draw[arrow] (analyzer)
+    -- node[above=1pt, font=\footnotesize]{$s_{k}(f)$} (softmax);
+  \draw[arrow] (softmax)
+    -- node[above=1pt, font=\footnotesize]{$H_{k}(f)$} (prod);
   \draw[arrow] (prod) -- (ifft);
   \draw[arrow] (ifft) -- (out);
 
-  \coordinate (spur) at ($(fft)!0.5!(magph) + (0,-10mm)$);
-  \draw[arrow, dashed] (fft.south) |- (spur) -| (prod.south);
-  \node[below=-1pt of spur, font=\scriptsize] {$S$};
+  % Dashed bypass: S from rFFT output goes back to the multiplier
+  \draw[arrow, dashed]
+    (fft.south) -- ++(0,-7mm) -| (prod.south);
 \end{tikzpicture}}
-\caption{Architecture of N-EMD. The input spectrum is fed to a 1D CNN
-analyzer that predicts $K$ log-filter responses. A softmax over the $K$
-dimension enforces the partition-of-unity condition
-$\sum_{k}H_{k}(f)=1$. Each filter is multiplied with the input spectrum
-and inverse-transformed to yield an IMF. The dashed path reuses the
-original complex spectrum $S$ at the pointwise-multiply stage.}
+\caption{Architecture of N-EMD. A 1D CNN analyzer reads the magnitude
+and phase of the input spectrum $S=\rFFT(s)$ and predicts $K$
+log-filter responses $s_{k}(f)$. A softmax over the $K$ dimension
+produces non-negative filter weights $H_{k}(f)$ that sum to one at
+every frequency bin (partition of unity). Each filter is multiplied
+with the complex spectrum (dashed bypass) and inverse-transformed to
+yield an IMF. The forward pass contains no unexplained operations.}
 \label{fig:arch}
 \end{figure*}
 
@@ -1080,25 +1079,27 @@ sweep through each other in frequency), and widening AM (time-varying
 bandwidth). Representative decompositions are in
 Fig.~\ref{fig:nonstat-example}.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figs/nonstationary_crossing_chirps.png}
+\includegraphics[width=0.95\textwidth]{figs/nonstationary_crossing_chirps.png}
 \caption{Decomposition of two crossing chirps. Top row: the ground-truth
 components; the remaining rows are the IMFs produced by EMD, VMD, and
-N-EMD. N-EMD places each chirp into a single, clean filter at training
-time despite the instantaneous frequencies crossing, because the
-filters are signal-adaptive and chosen once over the whole spectrum.}
+N-EMD. N-EMD separates by frequency band rather than by instantaneous
+frequency, so the crossing chirps get split across two band passes ---
+a known limitation of every frequency-partitioning method (see
+Section~\ref{sec:discussion}).}
 \label{fig:nonstat-example}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figs/decomposition_spectrograms.png}
-\caption{Time--frequency content of the N-EMD IMFs (bottom row) and of
-the classical baselines (top rows) on the canonical three-component
-signal. N-EMD concentrates each IMF within a single narrow band.}
+\includegraphics[width=0.78\textwidth]{figs/decomposition_spectrograms.png}
+\caption{Time--frequency content of EMD, VMD, and N-EMD IMFs on the
+canonical three-component signal. Rows are IMFs $1$--$3$ (top to
+bottom); columns are the three methods. N-EMD concentrates each IMF
+within a single narrow band.}
 \label{fig:spectrograms}
-\end{figure}
+\end{figure*}
 
 N-EMD's IMFs are cleanly bandpass-localised (Fig.~\ref{fig:spectrograms}),
 as expected from Proposition~\ref{prop:nonneg}: each $c_{k}$ is
@@ -1333,9 +1334,9 @@ improves accuracy.}
 \label{fig:physics-ablation}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figs/snr_sweep_accuracy_ci.png}
+\includegraphics[width=0.85\textwidth]{figs/snr_sweep_accuracy_ci.png}
 \caption{Multi-seed classification accuracy versus SNR (cheap
 baselines: 5 seeds; N-EMD: 3 seeds; error bars are one standard
 deviation). The capacity-matched VMD+MLP (big) narrows the end-to-end
@@ -1344,7 +1345,7 @@ and dominates at $10$ and $20$ dB. Generic learnable filter banks
 (Mel-FB, SincNet) underperform decomposition-specific preprocessing.
 Chance ($1/3$) in dashed.}
 \label{fig:snr-sweep}
-\end{figure}
+\end{figure*}
 
 \paragraph{Filter response evolution under task training.}
 Fig.~\ref{fig:filter-evolution} compares learned $H_{k}(f)$ under
@@ -1353,13 +1354,13 @@ gradients sharpen the partition around the class-dominant frequencies
 ($\sim\!50$, $\sim\!15$, and $\sim\!3$ Hz); the scratch variant shows
 the tightest bandpass structure.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figs/filter_responses_taskaware.png}
+\includegraphics[width=0.9\textwidth]{figs/filter_responses_taskaware.png}
 \caption{Learned filter responses $H_{k}(f)$ under three training
 regimes on a sample class-A test signal.}
 \label{fig:filter-evolution}
-\end{figure}
+\end{figure*}
 
 
 % ---------------------------------------------------------------------
@@ -1386,9 +1387,9 @@ is $3.7 \pm 10.3$ (non-convergent on short biomedical epochs,
 reflecting its known sensitivity to boundary effects). An example
 decomposition is in Fig.~\ref{fig:pupil-decomp}.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{figs/pupillometry_decomposition.png}
+\includegraphics[width=0.85\textwidth]{figs/pupillometry_decomposition.png}
 \caption{N-EMD decomposition of an example pupillary-response epoch
 from OpenNeuro ds003838. Top: raw trace. Rows 2--5: the four
 bandpass-filtered IMFs (low, mid-low, mid-high, high), plus a residual.
@@ -1396,7 +1397,7 @@ The architectural guarantees
 (Propositions~\ref{prop:recon}--\ref{prop:nonneg}) hold on real
 biomedical data without retraining.}
 \label{fig:pupil-decomp}
-\end{figure}
+\end{figure*}
 
 \paragraph{Classification is a dataset-level null.}
 On three canonical classification formulations --- 2-class (control
