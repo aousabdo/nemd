@@ -353,6 +353,7 @@ def train_nemd_end_to_end(
     seed: int = 42,
     device: torch.device | None = None,
     verbose: bool = True,
+    mlp_hidden: int = 64,
 ) -> PipelineResult:
     """Train N-EMD + MLP jointly (end-to-end) with CE + physics loss."""
     if device is None:
@@ -361,6 +362,7 @@ def train_nemd_end_to_end(
 
     classifier = NEMDClassifier(
         nemd_model=nemd_model, n_classes=3, sample_rate=sample_rate,
+        mlp_hidden=mlp_hidden,
     ).to(device)
 
     physics_loss = NEMDLoss(

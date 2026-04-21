@@ -57,35 +57,35 @@ Falls Church, VA 22043, USA (e-mail: aous.abdo@analyticadss.com).}}
 
 % =====================================================================
 \begin{abstract}
-Empirical mode decomposition (EMD) and variational mode decomposition
-(VMD) are widely used in biomedical, industrial, and geophysical
-signal processing but are not differentiable and cannot be jointly
-trained with a downstream task. Learned alternatives either give up
-interpretability or rely on soft physics losses that admit degenerate
-solutions. We introduce Neural Empirical Mode Decomposition (N-EMD), a
-differentiable signal-adaptive filter bank whose architecture
-guarantees three properties by construction: exact reconstruction of
-the input, a Parseval--Cauchy--Schwarz upper bound on total component
-energy, and non-negative bandpass filter responses. Pairwise
-orthogonality is a corollary that becomes exact as the softmax
-temperature tends to zero. A neural analyzer maps the input spectrum
-to $K$ log-responses, a softmax over the $K$ dimension produces a
-partition of unity, and the inverse FFT of each filtered spectrum
-yields an IMF. All three guarantees are structural consequences of
-this parameterisation and hold at initialisation, during training, and
-on unseen inputs. We document a failure mode of the more obvious
-approach --- training a generic sifting network with seven soft
-physics losses kept finding a new degenerate minimum whenever an
-additional loss was added. On a three-class classification benchmark
-(5 seeds, $3$ SNR levels), end-to-end N-EMD matches a capacity-matched
-VMD$+$MLP baseline at SNR $3$~dB ($94.2{\pm}2.9$ vs.\ $92.7{\pm}0.8$
-percent) and loses at $10$ and $20$~dB with high training-run
-variance, so N-EMD's advantage is narrow and concentrated in the
-low-SNR regime; the architectural guarantees transfer unchanged to
-held-out distributions and to real pupillometry data, where neither
-N-EMD nor any baseline (including fixed VMD and a raw CNN) beats
-majority-class prediction --- a dataset-level rather than
-method-level null.
+We present Neural Empirical Mode Decomposition (N-EMD), a differentiable
+signal-adaptive filter bank whose architecture guarantees three
+properties by construction, without relying on any loss to enforce
+them: exact reconstruction of the input signal, a Parseval--Cauchy--Schwarz
+upper bound on the total energy of the components, and non-negative
+bandpass filter responses. Pairwise orthogonality is a corollary that
+becomes exact as the softmax temperature tends to zero. A small 1D
+convolutional analyzer reads the magnitude and phase of the input
+spectrum and predicts $K$ log-responses; a softmax over the $K$
+dimension produces a partition of unity in the frequency domain, and
+the inverse FFT of each filtered spectrum yields an intrinsic mode
+function. The guarantees hold at initialisation, during training, and
+on unseen inputs. We also report a negative result that motivates the
+architectural approach: a generic iterative sifting network trained
+with seven soft physics losses kept finding a new degenerate minimum
+whenever an additional loss was added, because soft constraints do
+not shrink the feasible set of a non-convex optimisation.
+Architectural constraints do. End-to-end N-EMD is competitive with a
+capacity-matched VMD$+$MLP baseline on a multi-seed three-class
+classification benchmark at SNR $3$~dB ($94.2{\pm}2.9$ vs.\
+$92.7{\pm}0.8$ percent, overlapping error bars), where task-aware
+training matters most; it loses at higher SNR, where any fixed
+preprocessing is already close to the raw-CNN ceiling. The
+architectural guarantees transfer without retraining to five held-out
+distributions and to real pupillometry data. We position N-EMD as a
+theory-and-architecture contribution with narrow but real low-SNR task
+benefits, not as a replacement for VMD preprocessing in clean-signal
+regimes. Code and trained checkpoints are released at
+\url{https://github.com/aousabdo/nemd}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -167,9 +167,12 @@ properties; they follow from the algebra of the softmax.
 \item\emph{End-to-end task-aware training.} The architecture is
   differentiable; task gradients can shape the filter bank.
   Section~\ref{sec:taskaware} shows that an N-EMD classifier trained
-  end-to-end at SNR $3$~dB improves over a fixed-VMD baseline by
-  $+7.8$~pp and over a fixed-EMD baseline by $+14.0$~pp, while
-  retaining a physically-interpretable decomposition.
+  end-to-end at SNR $3$~dB is competitive with a capacity-matched
+  fixed-VMD baseline ($94.2{\pm}2.9$\,\% vs.\ $92.7{\pm}0.8$\,\%,
+  overlapping error bars at one standard deviation) while retaining a
+  physically-interpretable decomposition, and clearly beats the
+  small-MLP fixed-preprocessing pipelines by $+11$--$13$~pp at that
+  SNR.
 \item\emph{A negative result on soft physics constraints.} We document
   four progressive failure modes of a high-capacity sifting network
   trained with seven soft physics losses
@@ -1367,60 +1370,58 @@ regimes on a sample class-A test signal.}
 \subsection{Biomedical Validation: Pupillometry}
 \label{subsec:pupil}
 
-To test whether the architectural guarantees transfer to real-world
-data, we apply N-EMD, EMD, and VMD to the OpenNeuro
-\texttt{ds003838} pupillometry dataset~\cite{vanegas2023pupillometry}.
-After standard preprocessing (blink removal, bandpass $0.01$--$10$ Hz,
-resampling to $50$ Hz, 4-s epochs), we evaluate two things. First,
-decomposition quality as an end in itself. Second, whether any of the
-decomposition-based pipelines can classify experimental condition
-from a single pupillary response.
+We apply N-EMD (trained on synthetic AM--FM composites) and the EMD
+and VMD baselines to the OpenNeuro \texttt{ds003838} pupillometry
+dataset~\cite{vanegas2023pupillometry} to test whether
+Propositions~\ref{prop:recon}--\ref{prop:nonneg} transfer to real
+biomedical data with spectral characteristics different from any
+training signal. Preprocessing: blink removal, bandpass
+$0.01$--$10$\,Hz, resampling to $50$\,Hz, 4-second epochs.
 
-\paragraph{Decomposition quality carries over.}
-On $200$ held-out 4-second epochs, N-EMD's orthogonality is
-$0.015 \pm 0.060$ and its energy ratio is $0.988 \pm 0.043$ --- the
-architectural guarantees hold to within numerical tolerance, even on
-data whose spectral characteristics differ completely from the
-synthetic training distribution. VMD's orthogonality is $0.131 \pm
-0.084$ and its energy ratio is $0.866 \pm 0.140$. EMD's energy ratio
-is $3.7 \pm 10.3$ (non-convergent on short biomedical epochs,
-reflecting its known sensitivity to boundary effects). An example
-decomposition is in Fig.~\ref{fig:pupil-decomp}.
+\paragraph{The architectural guarantees transfer cleanly.}
+On $200$ held-out epochs, N-EMD's orthogonality index is
+$0.015 \pm 0.060$ and its energy ratio is $0.988 \pm 0.043$
+(Propositions~\ref{prop:recon} and~\ref{prop:energy} hold within
+numerical tolerance on data the analyzer has never seen). VMD's
+orthogonality drifts to $0.131 \pm 0.084$ and its energy ratio drops
+to $0.866 \pm 0.140$; EMD's energy ratio blows up to $3.7 \pm 10.3$
+(non-convergent sifting on short biomedical epochs). N-EMD's
+guarantees are the only ones that behave the same on synthetic and
+real data. Fig.~\ref{fig:pupil-decomp} shows an example epoch: the
+four bandpass filters carve the $0$--$25$\,Hz signal into disjoint
+bands, with the highest-frequency filter carrying essentially no
+signal energy on this epoch (the $0.01$--$10$\,Hz bandpass leaves
+nothing above $10$\,Hz to isolate).
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.85\textwidth]{figs/pupillometry_decomposition.png}
 \caption{N-EMD decomposition of an example pupillary-response epoch
 from OpenNeuro ds003838. Top: raw trace. Rows 2--5: the four
-bandpass-filtered IMFs (low, mid-low, mid-high, high), plus a residual.
-The architectural guarantees
-(Propositions~\ref{prop:recon}--\ref{prop:nonneg}) hold on real
-biomedical data without retraining.}
+bandpass-filtered IMFs (low, mid-low, mid-high, high), plus a
+residual. The high-frequency IMF shows amplitudes of order $10^{-5}$:
+its band lies mostly above $10$\,Hz, which the preprocessing
+bandpass $[0.01, 10]$\,Hz has already removed, so the filter has
+essentially no signal energy to isolate on this epoch --- the
+architectural guarantees (Propositions~\ref{prop:recon}--\ref{prop:nonneg})
+hold on real biomedical data without retraining.}
 \label{fig:pupil-decomp}
 \end{figure*}
 
-\paragraph{Classification is a dataset-level null.}
-On three canonical classification formulations --- 2-class (control
-vs.\ memory task, majority $67$\,\%), 3-class (attention condition),
-6-class (condition $\times$ subject-group) --- none of the tested
-pipelines reaches above the majority-class baseline by a reliable
-margin under a subject-level split. 2-class accuracy across
-$\{$EMD$+$MLP, VMD$+$MLP, VMD$+$MLP (big), Mel-FB$+$MLP$\}$ is
-$0.667 \pm 0.001$ over three seeds, with balanced accuracy pinned at
-$0.500$ --- every pipeline learns to predict majority. For 3-class,
-accuracies across five pipelines are within $\pm 4$ pp of chance
-$(1/3)$; 6-class is similarly uninformative. The null is consistent
-across all pipelines and tasks --- a strong indication that single
-pupillary-response traces alone, without concurrent behavioural or
-physiological covariates, carry insufficient class-discriminative
-information in this dataset. We therefore read this experiment as a
-decomposition-quality transfer result rather than a downstream-task
-result: N-EMD's architectural guarantees hold on real biomedical data
-(Fig.~\ref{fig:pupil-decomp} and the OI/ER numbers above) without
-retraining, but separating this set of experimental conditions is not
-doable by decomposition-then-classify with any of the methods we
-tested. A real-world task win is a natural next step and is outside
-the scope of this paper.
+\paragraph{Classification on this dataset is not separable.}
+As a secondary check we attempted three classification formulations
+(2-class control vs.\ memory, 3-class load level, 6-class
+condition$\times$group) under a subject-level split. None of the
+tested pipelines --- including the raw CNN ceiling --- exceeds the
+majority-class baseline by a reliable margin: 2-class accuracy is
+$0.667 \pm 0.001$ with balanced accuracy pinned at $0.500$ (every
+pipeline predicts majority); 3-class and 6-class are within $\pm 4$
+percentage points of their respective chance rates. The null is
+consistent across every decomposition-based pipeline and the raw-CNN
+baseline, which points to a dataset-level property (single pupillary
+traces without concurrent covariates do not carry class-discriminative
+information here) rather than a method failure. We include this as a
+sanity check, not as a proposed application of N-EMD.
 
 % ---------------------------------------------------------------------
 \subsection{Computational Cost}
