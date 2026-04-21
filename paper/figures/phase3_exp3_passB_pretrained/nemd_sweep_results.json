@@ -27,6 +27,29 @@
           "n_params": 130310,
           "wallclock_sec": 272.6624980409979
         }
+      },
+      "seed_43": {
+        "nemd_pretrained": {
+          "test_acc": 0.8316666483879089,
+          "n_params": 130310,
+          "wallclock_sec": 271.60877875000006
+        }
+      }
+    },
+    "snr_20_db": {
+      "seed_42": {
+        "nemd_pretrained": {
+          "test_acc": 0.8349999785423279,
+          "n_params": 130310,
+          "wallclock_sec": 263.5443165829929
+        }
+      },
+      "seed_43": {
+        "nemd_pretrained": {
+          "test_acc": 0.7416666746139526,
+          "n_params": 130310,
+          "wallclock_sec": 254.56716483301716
+        }
       }
     }
   }
