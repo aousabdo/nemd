@@ -558,9 +558,11 @@ class NEMD(nn.Module):
         X = torch.fft.rfft(x, dim=-1)
         n_freqs = X.shape[-1]
 
-        # Build 2-channel analyzer input
+        # Build 2-channel analyzer input. Use torch.atan2 for the phase
+        # rather than X.angle() so the graph runs on Apple-Silicon MPS
+        # (aten::angle is CPU-only as of torch 2.5).
         mag = X.abs()
-        phase = X.angle()
+        phase = torch.atan2(X.imag, X.real)
         spectrum_input = torch.stack([mag, phase], dim=1)  # (B, 2, n_freqs)
 
         # Predict filter log-responses

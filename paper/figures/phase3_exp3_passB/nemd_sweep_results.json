@@ -1,0 +1,95 @@
+{
+  "config": {
+    "snr_list": [
+      3.0,
+      10.0,
+      20.0
+    ],
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "variants": [
+      "scratch"
+    ],
+    "n_train": 1000,
+    "n_val": 200,
+    "n_test": 200,
+    "n_samples": 1024,
+    "sample_rate": 1000.0,
+    "epochs_nemd": 50,
+    "nemd_ckpt": "checkpoints_p25b_v3/final.pt"
+  },
+  "snr_results": {
+    "snr_3_db": {
+      "seed_42": {
+        "nemd_scratch": {
+          "test_acc": 0.903333306312561,
+          "n_params": 130310,
+          "wallclock_sec": 280.83536808399367
+        }
+      },
+      "seed_43": {
+        "nemd_scratch": {
+          "test_acc": 0.9733333587646484,
+          "n_params": 130310,
+          "wallclock_sec": 260.05663295899285
+        }
+      },
+      "seed_44": {
+        "nemd_scratch": {
+          "test_acc": 0.9483333230018616,
+          "n_params": 130310,
+          "wallclock_sec": 258.84144604200264
+        }
+      }
+    },
+    "snr_10_db": {
+      "seed_42": {
+        "nemd_scratch": {
+          "test_acc": 0.6866666674613953,
+          "n_params": 130310,
+          "wallclock_sec": 263.97020354200504
+        }
+      },
+      "seed_43": {
+        "nemd_scratch": {
+          "test_acc": 0.8199999928474426,
+          "n_params": 130310,
+          "wallclock_sec": 266.14235137501964
+        }
+      },
+      "seed_44": {
+        "nemd_scratch": {
+          "test_acc": 0.6666666865348816,
+          "n_params": 130310,
+          "wallclock_sec": 263.09770720801316
+        }
+      }
+    },
+    "snr_20_db": {
+      "seed_42": {
+        "nemd_scratch": {
+          "test_acc": 0.7633333206176758,
+          "n_params": 130310,
+          "wallclock_sec": 271.70256616699044
+        }
+      },
+      "seed_43": {
+        "nemd_scratch": {
+          "test_acc": 0.925000011920929,
+          "n_params": 130310,
+          "wallclock_sec": 267.7637487910106
+        }
+      },
+      "seed_44": {
+        "nemd_scratch": {
+          "test_acc": 0.9750000238418579,
+          "n_params": 130310,
+          "wallclock_sec": 262.8249522499973
+        }
+      }
+    }
+  }
+}

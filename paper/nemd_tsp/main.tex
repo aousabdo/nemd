@@ -63,24 +63,29 @@ signal processing but are not differentiable and cannot be jointly
 trained with a downstream task. Learned alternatives either give up
 interpretability or rely on soft physics losses that admit degenerate
 solutions. We introduce Neural Empirical Mode Decomposition (N-EMD), a
-differentiable signal-adaptive filter bank whose architecture enforces
-three properties exactly: exact reconstruction of the input, a
-Parseval bound on total component energy, and non-negative bandpass
-filter responses. A neural analyzer maps the input spectrum to $K$
-log-responses, a softmax over the $K$ dimension produces a
+differentiable signal-adaptive filter bank whose architecture
+guarantees three properties by construction: exact reconstruction of
+the input, a Parseval--Cauchy--Schwarz upper bound on total component
+energy, and non-negative bandpass filter responses. Pairwise
+orthogonality is a corollary that becomes exact as the softmax
+temperature tends to zero. A neural analyzer maps the input spectrum
+to $K$ log-responses, a softmax over the $K$ dimension produces a
 partition of unity, and the inverse FFT of each filtered spectrum
 yields an IMF. All three guarantees are structural consequences of
 this parameterisation and hold at initialisation, during training, and
 on unseen inputs. We document a failure mode of the more obvious
 approach --- training a generic sifting network with seven soft
 physics losses kept finding a new degenerate minimum whenever an
-additional loss was added. End-to-end
-task-aware training of N-EMD improves three-class classification
-accuracy by $+7.8$ percentage points over VMD$+$MLP at SNR $3$~dB; at
-$20$~dB, fixed VMD$+$MLP wins by $17.5$~pp, so the task-aware
-advantage is concentrated in the noisy regime where fixed
-preprocessing degrades most. Architectural guarantees transfer without
-retraining to held-out distributions and to real pupillometry data.
+additional loss was added. On a three-class classification benchmark
+(5 seeds, $3$ SNR levels), end-to-end N-EMD matches a capacity-matched
+VMD$+$MLP baseline at SNR $3$~dB ($94.2{\pm}2.9$ vs.\ $92.7{\pm}0.8$
+percent) and loses at $10$ and $20$~dB with high training-run
+variance, so N-EMD's advantage is narrow and concentrated in the
+low-SNR regime; the architectural guarantees transfer unchanged to
+held-out distributions and to real pupillometry data, where neither
+N-EMD nor any baseline (including fixed VMD and a raw CNN) beats
+majority-class prediction --- a dataset-level rather than
+method-level null.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -1202,156 +1207,142 @@ training, $200$ validation, $200$ test. Additive Gaussian noise is set
 to a chosen SNR level.
 
 \paragraph{Pipelines.}
-We compare five approaches. (1)~\emph{Raw CNN}: a three-layer 1-D
-convolutional network with max-pooling and an MLP head ($81{,}027$
-parameters); no decomposition. (2)~\emph{EMD+MLP (fixed)}: classical
-EMD produces three IMFs; from each we extract $\log$-energy, spectral
-centroid, and spectral bandwidth ($9$ features); an MLP
-$9 \to 64 \to 64 \to 3$ is trained on the cached features ($4{,}995$
-parameters). (3)~\emph{VMD+MLP (fixed)}: same as (2) with VMD.
-(4)~\emph{N-EMD pretrained + MLP (end-to-end)}: the filter bank is
-initialised from the released checkpoint and the entire
-pipeline (analyzer + filters + feature extraction + MLP) is fine-tuned
-with cross-entropy plus a $0.1{\times}$ physics regulariser
-($130{,}310$ parameters). (5)~\emph{N-EMD scratch + MLP
-(end-to-end)}: same as (4) with random initialisation. All feature
-extraction is implemented in PyTorch so gradients propagate through
-the filter bank. Training is $50$ epochs with Adam, learning rate
-$10^{-3}$ for (1)--(3) and $10^{-4}$ for (4)--(5).
+Seven approaches, chosen to separate the contribution of filter-bank
+preprocessing, learned vs.\ fixed filters, classifier head capacity,
+and end-to-end task-aware training. (1)~\emph{Raw CNN}: three 1-D
+conv layers with pooling and an MLP head ($81$\,k params); no
+decomposition. (2)~\emph{EMD+MLP (fixed)}: EMD $\to$ 9 features (log-
+energy, spectral centroid, bandwidth per IMF) $\to$ MLP
+$9{\to}64{\to}64{\to}3$ ($5$\,k params). (3)~\emph{VMD+MLP (small)}:
+same with VMD. (4)~\emph{VMD+MLP (big)}: VMD features, larger MLP
+$9{\to}320{\to}320{\to}3$ matching N-EMD's capacity ($107$\,k
+params); the capacity-match baseline requested by reviewers.
+(5)~\emph{Mel-FB+MLP}: fixed mel-scale triangular bank of three
+bandpass filters over $[0.5, 500]$ Hz, same features, small MLP.
+(6)~\emph{SincNet+MLP}: learnable sinc-windowed bandpass bank
+parameterised by $(f_{\text{low}}, f_{\text{high}})$
+pairs~\cite{ravanelli2018sincnet}, trained end-to-end with task loss.
+(7)~\emph{N-EMD (scratch, e2e)}: the architecture of
+Section~\ref{sec:method} trained end-to-end from random initialisation
+with cross-entropy plus a $0.1{\times}$ physics regulariser ($130$\,k
+params). Feature extraction is differentiable in PyTorch; gradients
+propagate through every learned frontend. Training: $50$ epochs with
+Adam. Cheap baselines: $5$ seeds; end-to-end N-EMD: $3$ seeds.
 
-\paragraph{Results at SNR 3 dB.}
-Table~\ref{tab:taskaware-3db} reports accuracy, macro F1, and parameter
-counts at SNR $3$ dB. End-to-end N-EMD from scratch reaches
-$94.8\%$ accuracy, a $7.8$~pp improvement over VMD+MLP and a
-$14.0$~pp improvement over EMD+MLP. The physics-pretrained variant
-lands between the two classical baselines and the scratch variant, at
-$89.5\%$. The raw CNN remains the overall ceiling at $99.2\%$ but
-forfeits every claim of interpretability: nothing in the convolutional
-stack corresponds to a plottable frequency response or a physical band.
+\paragraph{Multi-seed results.}
+Table~\ref{tab:snr-sweep} reports test accuracy (mean $\pm$ std over
+seeds) at SNR $3$, $10$, and $20$ dB; Fig.~\ref{fig:snr-sweep}
+displays the same data graphically. Three patterns are visible.
 
 \begin{table}[t]
 \centering
-\caption{Three-class classification at SNR $3$ dB. N-EMD trained
-end-to-end from scratch improves over VMD+MLP by $7.8$ percentage
-points.}
-\label{tab:taskaware-3db}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lccr}
+\caption{Three-class classification, multi-seed. 5 seeds for the
+cheap baselines; 3 seeds for N-EMD. ``VMD+MLP (big)'' is the
+capacity-matched VMD baseline ($107$\,k parameters). Bold marks the
+best non-raw-CNN pipeline in each SNR block.}
+\label{tab:snr-sweep}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{rlccr}
 \toprule
-Pipeline                     & Test acc.           & Macro F1            & Params \\
+SNR    & Pipeline                          & Acc (mean $\pm$ std)                & Params \\
 \midrule
-Raw CNN                      & $0.9917$            & $0.9917$            & $81{,}027$ \\
-EMD + MLP (fixed)            & $0.8083$            & $0.8075$            & $4{,}995$ \\
-VMD + MLP (fixed)            & $0.8700$            & $0.8707$            & $4{,}995$ \\
-N-EMD pretrained $+$ MLP     & $0.8950$            & $0.8940$            & $130{,}310$ \\
-N-EMD scratch $+$ MLP (e2e)  & $\mathbf{0.9483}$   & $\mathbf{0.9484}$   & $130{,}310$ \\
+$3$ dB & Raw CNN                           & $99.17$\,\%                         & $81$\,k  \\
+       & EMD + MLP                         & $81.30 \pm 1.83$                    & $5$\,k   \\
+       & VMD + MLP                         & $83.23 \pm 3.17$                    & $5$\,k   \\
+       & VMD + MLP (big)                   & $92.67 \pm 0.78$                    & $107$\,k \\
+       & Mel-FB + MLP                      & $64.53 \pm 2.01$                    & $5$\,k   \\
+       & SincNet + MLP                     & $69.63 \pm 1.12$                    & $5$\,k   \\
+       & N-EMD scratch (e2e)               & $\mathbf{94.17 \pm 2.90}$           & $130$\,k \\
+\midrule
+$10$ dB & Raw CNN                          & $99.83$\,\%                         & $81$\,k  \\
+       & EMD + MLP                         & $84.37 \pm 1.05$                    & $5$\,k   \\
+       & VMD + MLP                         & $94.80 \pm 0.83$                    & $5$\,k   \\
+       & VMD + MLP (big)                   & $\mathbf{95.67 \pm 0.92}$           & $107$\,k \\
+       & Mel-FB + MLP                      & $70.10 \pm 1.78$                    & $5$\,k   \\
+       & SincNet + MLP                     & $73.10 \pm 1.99$                    & $5$\,k   \\
+       & N-EMD scratch (e2e)               & $72.44 \pm 6.81$                    & $130$\,k \\
+\midrule
+$20$ dB & Raw CNN                          & $99.67$\,\%                         & $81$\,k  \\
+       & EMD + MLP                         & $91.77 \pm 1.10$                    & $5$\,k   \\
+       & VMD + MLP                         & $94.80 \pm 0.87$                    & $5$\,k   \\
+       & VMD + MLP (big)                   & $\mathbf{95.83 \pm 0.59}$           & $107$\,k \\
+       & Mel-FB + MLP                      & $74.13 \pm 1.99$                    & $5$\,k   \\
+       & SincNet + MLP                     & $75.40 \pm 1.71$                    & $5$\,k   \\
+       & N-EMD scratch (e2e)               & $88.78 \pm 9.03$                    & $130$\,k \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{When task-aware training wins.}
-We repeat the experiment at SNR levels $3$, $10$, and $20$ dB.
-Fig.~\ref{fig:snr-sweep} and Table~\ref{tab:snr-sweep} display the
-full sweep. The task-aware advantage is \emph{noise-regime-dependent}:
+\emph{(i) Capacity matters.} The original small-MLP VMD baseline
+reaches $83.2 \pm 3.2$\,\% at $3$ dB; feeding the same VMD features
+into a capacity-matched MLP (VMD+MLP (big), $107$\,k parameters) adds
+$+9.4$ percentage points at no cost to the decomposition. The bulk of
+the gap between a fixed-preprocessing pipeline and an end-to-end
+learned one can be closed by head capacity alone, not by learning the
+frontend. Our earlier single-seed table understated this.
 
-\begin{itemize}
-\item At $3$ dB, N-EMD (scratch) beats VMD+MLP by $+7.8$~pp.
-\item At $10$ dB, the gap inverts: VMD+MLP beats N-EMD by $7.8$~pp.
-\item At $20$ dB, VMD+MLP beats N-EMD by $17.5$~pp.
-\end{itemize}
-At low SNR, VMD's per-signal ADMM optimisation produces a degraded
-decomposition (recall from Table~\ref{tab:generalization} that its
-energy ratio drops to $0.60$ on $5$ dB data), and the downstream MLP
-cannot compensate for features that have already lost signal content;
-N-EMD's end-to-end training can re-tune the filter bank to preserve
-task-relevant structure at the noise level it sees. At high SNR, VMD
-produces clean features without any tuning, and N-EMD's slightly
-weaker mode separation (acknowledged in
-Section~\ref{subsec:generalization}) becomes the bottleneck.
-A second pattern is the pretrained-variant collapse: accuracy falls
-from $0.895$ at $3$ dB to $0.72$ at $10$ and $20$ dB. The most
-plausible reading is that the $0.1{\times}$ physics regulariser anchors
-the analyzer near its decomposition-optimal configuration while the
-task gradient tries to adapt it to a cleaner regime; the regulariser
-then actively fights the classifier. The scratch variant, without the
-anchor, does not show the collapse. Sweeping the regulariser weight is
-the obvious fix and is future work. The practical implication: N-EMD
-is most valuable where fixed preprocessing degrades most --- low SNR
---- and fixed VMD$+$MLP is the right choice at high SNR.
+\emph{(ii) Generic learnable filter banks underperform
+decomposition-specific baselines.} Mel-FB and SincNet reach only
+$64$--$75$\,\% across SNR levels, far below EMD/VMD. Mel is poorly
+adapted to the sub-$60$-Hz band structure of our signals; SincNet's
+two-parameter-per-filter bandpass does adapt but lacks a
+decomposition-style partition constraint. Simply being a learnable
+frontend is not enough.
+
+\emph{(iii) N-EMD's task-aware advantage is real but narrow.} At
+$3$ dB, N-EMD (scratch, e2e) reaches $94.2 \pm 2.9$\,\%, versus
+$92.7 \pm 0.8$\,\% for the capacity-matched VMD+MLP (big) --- a
+$+1.5$~pp lead whose error bars overlap. Against the non-capacity-
+matched small-MLP VMD baseline, the lead is $+11$ pp. At $10$ and
+$20$ dB, N-EMD underperforms the capacity-matched baseline by
+$23$ and $7$ pp respectively, and the scratch-variant accuracy has
+much larger run-to-run variance (std $6.8$ and $9.0$\,\%) than any
+fixed-preprocessing baseline. The task-aware advantage exists only
+in the low-SNR regime, is of modest magnitude against a properly-
+tuned baseline, and comes with a training-instability penalty at
+higher SNR that is only partly understood.
+
+\paragraph{Physics-regulariser ablation.}
+The raw CNN sits at $99$\,\% across all SNR levels; it needs no
+bandpass decomposition to solve this task. A pretrained-initialisation
+variant of N-EMD, fine-tuned with the same $0.1{\times}$ physics
+regulariser used in training, reaches only $\approx 0.72$\,\% at
+$10$ and $20$ dB in single-seed runs --- substantially worse than
+scratch. Fig.~\ref{fig:physics-ablation} sweeps the regulariser
+weight at SNR $10$ dB over $\lambda_{\text{phys}} \in \{0, 0.01,
+0.1, 1.0\}$ on two seeds. The hypothesis is that for clean-signal
+inputs the physics-optimal partition is close enough to VMD's that
+the regulariser actively fights the classifier; the ablation tests
+whether loosening or removing it recovers performance.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{figs/snr_sweep_accuracy.png}
-\caption{Classification accuracy versus SNR for the five pipelines.
-N-EMD (scratch, end-to-end) wins at $3$ dB and loses at $10$ and $20$
-dB. The dashed line is chance ($1/3$).}
+\includegraphics[width=\columnwidth]{figs/snr_sweep_accuracy_ci.png}
+\caption{Multi-seed classification accuracy versus SNR (cheap
+baselines: 5 seeds; N-EMD: 3 seeds; error bars are one standard
+deviation). The capacity-matched VMD+MLP (big) narrows the end-to-end
+N-EMD advantage at $3$ dB to $+1.5$ pp with overlapping error bars,
+and dominates at $10$ and $20$ dB. Generic learnable filter banks
+(Mel-FB, SincNet) underperform decomposition-specific preprocessing.
+Chance ($1/3$) in dashed.}
 \label{fig:snr-sweep}
 \end{figure}
 
-\begin{table}[t]
-\centering
-\caption{SNR sweep for the task-aware classification. Bold is the
-best-performing \emph{interpretable} pipeline (ignoring the raw CNN
-baseline, which is non-interpretable).}
-\label{tab:snr-sweep}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{rlcc}
-\toprule
-SNR    & Pipeline                     & Test acc.          & Macro F1 \\
-\midrule
-$3$  dB & Raw CNN                     & $0.9917$           & $0.9917$ \\
-        & EMD + MLP                   & $0.8083$           & $0.8075$ \\
-        & VMD + MLP                   & $0.8700$           & $0.8707$ \\
-        & N-EMD pretrained            & $0.8950$           & $0.8940$ \\
-        & N-EMD scratch (e2e)         & $\mathbf{0.9483}$  & $\mathbf{0.9484}$ \\
-\midrule
-$10$ dB & Raw CNN                     & $0.9983$           & $0.9983$ \\
-        & EMD + MLP                   & $0.8417$           & $0.8393$ \\
-        & VMD + MLP                   & $\mathbf{0.9383}$  & $\mathbf{0.9380}$ \\
-        & N-EMD pretrained            & $0.7200$           & $0.6555$ \\
-        & N-EMD scratch (e2e)         & $0.8600$           & $0.8589$ \\
-\midrule
-$20$ dB & Raw CNN                     & $0.9967$           & $0.9967$ \\
-        & EMD + MLP                   & $0.9233$           & $0.9232$ \\
-        & VMD + MLP                   & $\mathbf{0.9533}$  & $\mathbf{0.9533}$ \\
-        & N-EMD pretrained            & $0.7183$           & $0.7073$ \\
-        & N-EMD scratch (e2e)         & $0.7783$           & $0.7781$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 \paragraph{Filter response evolution under task training.}
-Fig.~\ref{fig:filter-evolution} compares the learned filter responses
-$H_{k}(f)$ under three regimes on a sample test signal: (left) training
-with physics losses only; (middle) pretrained from physics and
-fine-tuned end-to-end with the task loss; (right) trained end-to-end
-from scratch. The scratch variant shows the sharpest bandpass structure
-at the class-dominant frequencies ($\sim\!50$, $\sim\!15$, and
-$\sim\!3$ Hz). The filters in the physics-only run are broader and
-their edges are less aligned with the class-discriminative bands. Task
-gradients visibly sharpen the partition around the frequencies the
-classifier needs.
+Fig.~\ref{fig:filter-evolution} compares learned $H_{k}(f)$ under
+physics-only, pretrained-plus-task, and scratch-plus-task regimes. Task
+gradients sharpen the partition around the class-dominant frequencies
+($\sim\!50$, $\sim\!15$, and $\sim\!3$ Hz); the scratch variant shows
+the tightest bandpass structure.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figs/filter_responses_taskaware.png}
 \caption{Learned filter responses $H_{k}(f)$ under three training
-regimes, evaluated on a sample class-A test signal. End-to-end training
-(middle and right) concentrates filter support around the dominant
-class frequencies more tightly than physics-only training (left),
-producing a task-adapted partition.}
+regimes on a sample class-A test signal.}
 \label{fig:filter-evolution}
 \end{figure}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figs/confusion_matrices_snr3.png}
-\caption{Confusion matrices at SNR $3$ dB for the five pipelines. The
-diagonal is populated cleanly for N-EMD (scratch) and the raw CNN;
-the fixed-preprocessing pipelines leak between the middle-frequency
-and low-frequency classes.}
-\label{fig:confusion-3db}
-\end{figure}
 
 % ---------------------------------------------------------------------
 \subsection{Biomedical Validation: Pupillometry}
@@ -1454,18 +1445,34 @@ that this differentiability pays for itself on downstream tasks
 (Section~\ref{sec:taskaware}). Mode mixing measured per se is the
 wrong success metric when the decomposition serves a task.
 
-\paragraph{SNR-regime dependence.}
-The task-aware advantage inverts at high SNR
-(Table~\ref{tab:snr-sweep}). At $20$~dB, VMD$+$MLP beats N-EMD by
-$17.5$~pp --- an honest loss. The pattern makes sense: when the signal
-is clean, VMD produces good features at zero training cost; when the
-signal is noisy, fixed preprocessing degrades and only end-to-end
-training can recover task-relevant structure. The implication is
-practical. N-EMD should be the tool of choice in low-SNR regimes;
-fixed VMD preprocessing is sufficient at high SNR and saves the
-training budget. A hybrid pipeline (use VMD by default, retrain N-EMD
-when a calibration check shows SNR below a threshold) is a natural
-deployment pattern.
+\paragraph{SNR-regime dependence and capacity-match honesty.}
+The multi-seed task-aware sweep (Table~\ref{tab:snr-sweep}) is more
+nuanced than a single-seed run suggested. Against the capacity-matched
+VMD$+$MLP (big) baseline, N-EMD's $3$~dB advantage is only
+$+1.5$ pp with overlapping error bars; against the small-MLP baseline,
+it is $+11$ pp. The original $+7.8$ pp claim (from single-seed data
+with a $5$\,k-parameter MLP head) was an artifact of capacity
+mismatch, not only of task-aware training. At $10$ and $20$ dB,
+N-EMD underperforms the capacity-matched baseline by $23$ and $7$ pp
+and shows high run-to-run variance (std $6.8$ and $9.0$ pp). The
+honest reading: the decomposition-specific architecture helps at low
+SNR with a modest margin, loses at high SNR, and has training
+stability problems at high SNR that the physics-regulariser ablation
+begins to explain. N-EMD should be proposed as a complement to fixed
+VMD preprocessing, not a replacement; a hybrid pipeline that uses
+VMD$+$MLP by default and switches to end-to-end N-EMD below a
+calibration SNR threshold is the cleanest deployment.
+
+\paragraph{Generic learnable filter banks are not enough.}
+Mel-FB and SincNet --- both interpretable, differentiable, bandpass
+frontends with long audio-processing histories --- reach only
+$64$--$75$\,\% accuracy across SNR levels, far below EMD and VMD.
+Simply being a learnable filter bank does not suffice; the specific
+structural choices that make a filter bank a decomposition
+(per-frequency partition of unity, adaptive per-input filter
+responses) matter. This is a concrete validation of the paper's
+design thesis and also a limitation of existing differentiable
+frontends for decomposition tasks.
 
 \paragraph{Fixed $K$.}
 Our architecture requires the number of IMFs $K$ at training time.
@@ -1499,15 +1506,10 @@ combination.
 
 \paragraph{Scope of the experimental claims.}
 The task-aware benchmark is synthetic and frequency-decomposable by
-construction, which is a favourable setting for any bandpass-based
-pipeline; we do not generalise the $3$~dB win to broader task families.
-The pupillometry experiment contributes a decomposition-quality
+construction. The pupillometry experiment is a decomposition-quality
 transfer result on real biomedical data but no classification win. A
-real-world task --- one where a decomposition-based pipeline has reason
-to beat an end-to-end classifier --- is the natural next experiment.
-Table~III reports single-seed numbers per pipeline; multi-seed
-confidence intervals are in preparation and we expect them to widen
-the reported gaps modestly without changing the qualitative pattern.
+real-world task where a decomposition-based pipeline has reason to
+beat an end-to-end classifier is the natural next experiment.
 
 \paragraph{Future work.}
 Four directions stand out. (i)~Adaptive $K$ via learned stopping.
@@ -1539,11 +1541,13 @@ properties as consequences of its construction rather than as outcomes
 of a loss: exact reconstruction (Proposition~\ref{prop:recon}), a
 Cauchy--Schwarz bound on total component energy
 (Proposition~\ref{prop:energy}), and non-negative bandpass filter
-responses (Proposition~\ref{prop:nonneg}). End-to-end training with a
-downstream task improves classification accuracy by $7.8$~pp over
-VMD$+$MLP at SNR $3$~dB on a controlled benchmark; the same
-task-aware pipeline loses by $17.5$~pp at SNR $20$~dB, so we recommend
-the method specifically for noisy operating regimes. Along the way we
+responses (Proposition~\ref{prop:nonneg}). On a multi-seed three-class
+benchmark, end-to-end N-EMD matches a capacity-matched VMD+MLP
+baseline at SNR $3$~dB within error bars and underperforms it at
+$10$ and $20$~dB, so N-EMD's task-aware advantage is narrow and
+concentrated in the low-SNR regime. Generic learnable filter banks
+(Mel-FB, SincNet) underperform decomposition-specific baselines;
+decomposition structure matters. Along the way we
 documented a negative result: a generic iterative sifting network
 trained with seven soft physics losses kept finding new degenerate
 solutions, because soft constraints do not shrink the feasible set of

@@ -1,0 +1,29 @@
+{
+  "config": {
+    "snr": 10.0,
+    "seeds": [
+      42,
+      43
+    ],
+    "lambdas": [
+      0.0,
+      0.01,
+      0.1,
+      1.0
+    ],
+    "n_train": 1000,
+    "n_val": 200,
+    "n_test": 200,
+    "epochs": 50,
+    "nemd_ckpt": "checkpoints_p25b_v3/final.pt",
+    "variant": "pretrained"
+  },
+  "results": {
+    "lambda_0.0": {
+      "seed_42": {
+        "test_acc": 0.8349999785423279,
+        "wallclock_sec": 283.3629433749884
+      }
+    }
+  }
+}

@@ -1,0 +1,436 @@
+{
+  "config": {
+    "snr_list": [
+      3.0,
+      10.0,
+      20.0
+    ],
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "n_train": 1000,
+    "n_val": 200,
+    "n_test": 200,
+    "n_samples": 1024,
+    "sample_rate": 1000.0,
+    "epochs_classical": 50,
+    "epochs_nemd": 50
+  },
+  "snr_results": {
+    "snr_3_db": {
+      "seed_42": {
+        "emd_mlp": {
+          "test_acc": 0.8066666722297668,
+          "n_params": 4995,
+          "wallclock_sec": 12.828294667007867
+        },
+        "vmd_mlp": {
+          "test_acc": 0.8550000190734863,
+          "n_params": 4995,
+          "wallclock_sec": 13.679687791998731
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9266666769981384,
+          "n_params": 106883,
+          "wallclock_sec": 16.104502208007034
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.6683333516120911,
+          "n_params": 4995,
+          "wallclock_sec": 14.063112792005995
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.6850000023841858,
+          "n_params": 5001,
+          "wallclock_sec": 35.92476545801037
+        }
+      },
+      "seed_43": {
+        "emd_mlp": {
+          "test_acc": 0.8133333325386047,
+          "n_params": 4995,
+          "wallclock_sec": 15.201234874984948
+        },
+        "vmd_mlp": {
+          "test_acc": 0.824999988079071,
+          "n_params": 4995,
+          "wallclock_sec": 10.652519875002326
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9166666865348816,
+          "n_params": 106883,
+          "wallclock_sec": 11.417566791002173
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.6499999761581421,
+          "n_params": 4995,
+          "wallclock_sec": 10.57146991600166
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7083333134651184,
+          "n_params": 5001,
+          "wallclock_sec": 27.390514416998485
+        }
+      },
+      "seed_44": {
+        "emd_mlp": {
+          "test_acc": 0.7833333611488342,
+          "n_params": 4995,
+          "wallclock_sec": 12.075643874995876
+        },
+        "vmd_mlp": {
+          "test_acc": 0.7749999761581421,
+          "n_params": 4995,
+          "wallclock_sec": 11.051334499992663
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9283333420753479,
+          "n_params": 106883,
+          "wallclock_sec": 11.623161875002552
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.6150000095367432,
+          "n_params": 4995,
+          "wallclock_sec": 13.230940624984214
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7099999785423279,
+          "n_params": 5001,
+          "wallclock_sec": 29.218872500001453
+        }
+      },
+      "seed_45": {
+        "emd_mlp": {
+          "test_acc": 0.8233333230018616,
+          "n_params": 4995,
+          "wallclock_sec": 13.340396209008759
+        },
+        "vmd_mlp": {
+          "test_acc": 0.8416666388511658,
+          "n_params": 4995,
+          "wallclock_sec": 11.255499624996446
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.92166668176651,
+          "n_params": 106883,
+          "wallclock_sec": 10.622505666018697
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.6299999952316284,
+          "n_params": 4995,
+          "wallclock_sec": 12.995728083013091
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.6833333373069763,
+          "n_params": 5001,
+          "wallclock_sec": 29.49006399998325
+        }
+      },
+      "seed_46": {
+        "emd_mlp": {
+          "test_acc": 0.8383333086967468,
+          "n_params": 4995,
+          "wallclock_sec": 12.445692791981855
+        },
+        "vmd_mlp": {
+          "test_acc": 0.8650000095367432,
+          "n_params": 4995,
+          "wallclock_sec": 12.02128904100391
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9399999976158142,
+          "n_params": 106883,
+          "wallclock_sec": 12.043076832982479
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.6633333563804626,
+          "n_params": 4995,
+          "wallclock_sec": 11.709700915991561
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.6949999928474426,
+          "n_params": 5001,
+          "wallclock_sec": 27.868227708007907
+        }
+      }
+    },
+    "snr_10_db": {
+      "seed_42": {
+        "emd_mlp": {
+          "test_acc": 0.8416666388511658,
+          "n_params": 4995,
+          "wallclock_sec": 9.452782750013284
+        },
+        "vmd_mlp": {
+          "test_acc": 0.9333333373069763,
+          "n_params": 4995,
+          "wallclock_sec": 11.715478083002381
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9483333230018616,
+          "n_params": 106883,
+          "wallclock_sec": 12.348805500019807
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.7083333134651184,
+          "n_params": 4995,
+          "wallclock_sec": 11.490597290976439
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7066666483879089,
+          "n_params": 5001,
+          "wallclock_sec": 30.04901349998545
+        }
+      },
+      "seed_43": {
+        "emd_mlp": {
+          "test_acc": 0.8633333444595337,
+          "n_params": 4995,
+          "wallclock_sec": 11.869499874999747
+        },
+        "vmd_mlp": {
+          "test_acc": 0.95333331823349,
+          "n_params": 4995,
+          "wallclock_sec": 11.53217208298156
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9516666531562805,
+          "n_params": 106883,
+          "wallclock_sec": 11.732889416016405
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.7083333134651184,
+          "n_params": 4995,
+          "wallclock_sec": 11.672358040988911
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7450000047683716,
+          "n_params": 5001,
+          "wallclock_sec": 30.006111750000855
+        }
+      },
+      "seed_44": {
+        "emd_mlp": {
+          "test_acc": 0.8366666436195374,
+          "n_params": 4995,
+          "wallclock_sec": 11.69807720798417
+        },
+        "vmd_mlp": {
+          "test_acc": 0.9449999928474426,
+          "n_params": 4995,
+          "wallclock_sec": 11.271746084006736
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.949999988079071,
+          "n_params": 106883,
+          "wallclock_sec": 11.713737915997626
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.6800000071525574,
+          "n_params": 4995,
+          "wallclock_sec": 11.247376583982259
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7066666483879089,
+          "n_params": 5001,
+          "wallclock_sec": 28.975928416009992
+        }
+      },
+      "seed_45": {
+        "emd_mlp": {
+          "test_acc": 0.8333333134651184,
+          "n_params": 4995,
+          "wallclock_sec": 11.408844416990178
+        },
+        "vmd_mlp": {
+          "test_acc": 0.9516666531562805,
+          "n_params": 4995,
+          "wallclock_sec": 11.843368457979523
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9733333587646484,
+          "n_params": 106883,
+          "wallclock_sec": 11.964468583988491
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.6816666722297668,
+          "n_params": 4995,
+          "wallclock_sec": 11.893334624997806
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7483333349227905,
+          "n_params": 5001,
+          "wallclock_sec": 30.654490249988157
+        }
+      },
+      "seed_46": {
+        "emd_mlp": {
+          "test_acc": 0.8433333039283752,
+          "n_params": 4995,
+          "wallclock_sec": 12.110731249995297
+        },
+        "vmd_mlp": {
+          "test_acc": 0.9566666483879089,
+          "n_params": 4995,
+          "wallclock_sec": 12.060982666997006
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9599999785423279,
+          "n_params": 106883,
+          "wallclock_sec": 11.892178999987664
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.7266666889190674,
+          "n_params": 4995,
+          "wallclock_sec": 11.914567041996634
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7483333349227905,
+          "n_params": 5001,
+          "wallclock_sec": 30.79927008401137
+        }
+      }
+    },
+    "snr_20_db": {
+      "seed_42": {
+        "emd_mlp": {
+          "test_acc": 0.9233333468437195,
+          "n_params": 4995,
+          "wallclock_sec": 12.364612792007392
+        },
+        "vmd_mlp": {
+          "test_acc": 0.9516666531562805,
+          "n_params": 4995,
+          "wallclock_sec": 12.112493834021734
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.949999988079071,
+          "n_params": 106883,
+          "wallclock_sec": 11.846732125006383
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.7483333349227905,
+          "n_params": 4995,
+          "wallclock_sec": 11.751146249996964
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7400000095367432,
+          "n_params": 5001,
+          "wallclock_sec": 29.93563875000109
+        }
+      },
+      "seed_43": {
+        "emd_mlp": {
+          "test_acc": 0.9183333516120911,
+          "n_params": 4995,
+          "wallclock_sec": 12.366449666005792
+        },
+        "vmd_mlp": {
+          "test_acc": 0.9483333230018616,
+          "n_params": 4995,
+          "wallclock_sec": 11.365408749989001
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9566666483879089,
+          "n_params": 106883,
+          "wallclock_sec": 11.263840250001522
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.7683333158493042,
+          "n_params": 4995,
+          "wallclock_sec": 11.331803875014884
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7400000095367432,
+          "n_params": 5001,
+          "wallclock_sec": 29.51440904199262
+        }
+      },
+      "seed_44": {
+        "emd_mlp": {
+          "test_acc": 0.8999999761581421,
+          "n_params": 4995,
+          "wallclock_sec": 11.396852250007214
+        },
+        "vmd_mlp": {
+          "test_acc": 0.9466666579246521,
+          "n_params": 4995,
+          "wallclock_sec": 11.363610916014295
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9583333134651184,
+          "n_params": 106883,
+          "wallclock_sec": 11.519526749994839
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.7066666483879089,
+          "n_params": 4995,
+          "wallclock_sec": 11.350020042009419
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7416666746139526,
+          "n_params": 5001,
+          "wallclock_sec": 29.5696382909955
+        }
+      },
+      "seed_45": {
+        "emd_mlp": {
+          "test_acc": 0.9133333563804626,
+          "n_params": 4995,
+          "wallclock_sec": 11.47205587499775
+        },
+        "vmd_mlp": {
+          "test_acc": 0.9333333373069763,
+          "n_params": 4995,
+          "wallclock_sec": 9.894182374991942
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9583333134651184,
+          "n_params": 106883,
+          "wallclock_sec": 8.845312291989103
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.7433333396911621,
+          "n_params": 4995,
+          "wallclock_sec": 9.56208874998265
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7666666507720947,
+          "n_params": 5001,
+          "wallclock_sec": 25.56496762498864
+        }
+      },
+      "seed_46": {
+        "emd_mlp": {
+          "test_acc": 0.9333333373069763,
+          "n_params": 4995,
+          "wallclock_sec": 9.166299417003756
+        },
+        "vmd_mlp": {
+          "test_acc": 0.9599999785423279,
+          "n_params": 4995,
+          "wallclock_sec": 9.096837832999881
+        },
+        "vmd_mlp_big": {
+          "test_acc": 0.9683333039283752,
+          "n_params": 106883,
+          "wallclock_sec": 8.939215125021292
+        },
+        "mel_fb_mlp": {
+          "test_acc": 0.7400000095367432,
+          "n_params": 4995,
+          "wallclock_sec": 9.07052062501316
+        },
+        "sincnet_mlp": {
+          "test_acc": 0.7816666960716248,
+          "n_params": 5001,
+          "wallclock_sec": 25.18495991601958
+        }
+      }
+    }
+  }
+}
