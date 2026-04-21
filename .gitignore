@@ -1,0 +1,41 @@
+# Data — large, obtain from original sources (OpenNeuro ds003838, etc.)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Scratch
+scratch/
+tmp/

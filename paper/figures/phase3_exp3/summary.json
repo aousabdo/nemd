@@ -1,0 +1,149 @@
+{
+  "config": {
+    "nemd_ckpt": "checkpoints_p25b_v3/final.pt",
+    "n_train": 1000,
+    "n_val": 200,
+    "n_test": 200,
+    "n_samples": 1024,
+    "sample_rate": 1000.0,
+    "snr_db": 3.0,
+    "epochs_classical": 50,
+    "epochs_nemd": 50,
+    "out_dir": "paper/figures/phase3_exp3",
+    "seed": 42,
+    "pipelines": "raw_cnn,emd_mlp,vmd_mlp,nemd_pretrained,nemd_scratch"
+  },
+  "pipelines": [
+    {
+      "pipeline": "raw_cnn",
+      "test_acc": 0.9916666746139526,
+      "macro_f1": 0.9916537909419022,
+      "n_params": 81027,
+      "wallclock_sec": 514.2731432076544,
+      "confusion": [
+        [
+          200,
+          0,
+          0
+        ],
+        [
+          0,
+          199,
+          1
+        ],
+        [
+          3,
+          1,
+          196
+        ]
+      ],
+      "test_loss": 0.022959328293800353
+    },
+    {
+      "pipeline": "emd_mlp",
+      "test_acc": 0.8083333373069763,
+      "macro_f1": 0.8075167119196897,
+      "n_params": 4995,
+      "wallclock_sec": 1.6216634172014892,
+      "confusion": [
+        [
+          193,
+          1,
+          6
+        ],
+        [
+          3,
+          146,
+          51
+        ],
+        [
+          9,
+          45,
+          146
+        ]
+      ],
+      "test_loss": 0.47520849108695984
+    },
+    {
+      "pipeline": "vmd_mlp",
+      "test_acc": 0.8700000047683716,
+      "macro_f1": 0.8707245812817792,
+      "n_params": 4995,
+      "wallclock_sec": 2.2539130840450525,
+      "confusion": [
+        [
+          186,
+          13,
+          1
+        ],
+        [
+          6,
+          167,
+          27
+        ],
+        [
+          2,
+          29,
+          169
+        ]
+      ],
+      "test_loss": 0.35208964347839355
+    },
+    {
+      "pipeline": "nemd_pretrained",
+      "test_acc": 0.8949999809265137,
+      "macro_f1": 0.8940269629978305,
+      "n_params": 130310,
+      "wallclock_sec": 6346.7007825826295,
+      "confusion": [
+        [
+          186,
+          14,
+          0
+        ],
+        [
+          34,
+          158,
+          8
+        ],
+        [
+          0,
+          7,
+          193
+        ]
+      ],
+      "test_loss": 0.41476599375406903
+    },
+    {
+      "pipeline": "nemd_scratch",
+      "test_acc": 0.9483333230018616,
+      "macro_f1": 0.9484362502678066,
+      "n_params": 130310,
+      "wallclock_sec": 6659.970572541002,
+      "confusion": [
+        [
+          185,
+          15,
+          0
+        ],
+        [
+          8,
+          188,
+          4
+        ],
+        [
+          0,
+          4,
+          196
+        ]
+      ],
+      "test_loss": 0.195967960357666
+    }
+  ],
+  "preprocessing_times": {
+    "emd_test_total_sec": 5.636330875102431,
+    "emd_test_per_signal_ms": 9.393884791837385,
+    "vmd_test_total_sec": 12.237877290695906,
+    "vmd_test_per_signal_ms": 20.39646215115984
+  }
+}
