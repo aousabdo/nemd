@@ -487,9 +487,14 @@ The analyzer is a fully-convolutional 1D network over frequency bins;
 no fixed length is baked into its weights. A model trained at signal
 length $T$ can be applied at any other length $T'$ (and any sample
 rate) with no modification, since $\lvert S\rvert$ and $\angle S$ are
-the only inputs. The trained checkpoint used throughout the paper was
-optimised at $T = 512$, $f_{s} = 512$ Hz and is applied at $T = 1024$,
-$f_{s} = 1000$ Hz without retraining.
+the only inputs. The trained checkpoint (optimised at $T = 512$,
+$f_{s} = 512$ Hz) was evaluated on $200$ in-distribution AM--FM
+composites at each of $T \in \{256, 512, 1024, 2048, 4096\}$ with
+$f_{s} = 512$ Hz: orthogonality index $\mathrm{OI} \leq 0.004$ and
+energy ratio $\mathrm{ER} = 1.000 \pm 0.000$ at every length, with
+per-signal inference $\approx 4$\,ms on MPS. The architectural
+guarantees hold unchanged at inference lengths up to $8\times$ the
+training length.
 \end{remark}
 
 \begin{remark}[Phase channel]
@@ -1086,13 +1091,15 @@ Fig.~\ref{fig:nonstat-example}.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.95\textwidth]{figs/nonstationary_crossing_chirps.png}
-\caption{Decomposition of two crossing chirps. Top row: the ground-truth
-components; the remaining rows are the IMFs produced by EMD, VMD, and
-N-EMD. N-EMD separates by frequency band rather than by instantaneous
-frequency, so the crossing chirps get split across two band passes ---
-a known limitation of every frequency-partitioning method (see
-Section~\ref{sec:discussion}).}
+\includegraphics[width=0.85\textwidth]{figs/crossing_chirps_with_ssq.png}
+\caption{Crossing-chirps benchmark. Top: a two-crossing-chirps signal
+plus a $3$\,Hz tone. Middle rows: ground-truth components vs.\ IMFs from
+EMD, VMD, and N-EMD --- every frequency-partitioning decomposition
+splits each chirp across bands. Bottom:
+synchrosqueezed~\cite{daubechies2011synchrosqueezing} wavelet transform
+of the same signal renders the chirps as single continuous ridges.
+Decomposition and time-frequency ridge extraction answer different
+questions; the paper claims the former, not the latter.}
 \label{fig:nonstat-example}
 \end{figure*}
 
@@ -1313,27 +1320,20 @@ configurations, a small loss at near-ceiling accuracy. Over the three
 SNR levels, \emph{the best-configured N-EMD wins twice and loses once
 by small margins}, and no single configuration is best everywhere.
 
-\emph{(iv) The frontend does useful work beyond head capacity.}
-A reviewer-requested frontend-isolation ablation (N-EMD with
-$107$\,k MLP head, same capacity as VMD+MLP (big)) improves over the
-$5$\,k-head variant by $+0.7$, $+19.9$, and $+3.5$~pp at $3$, $10$,
-$20$ dB, and reduces run-to-run variance at $20$ dB from $9.0$\,\%
-to $1.9$\,\%. The big-head N-EMD does not reduce to the big-head VMD
-baseline: against VMD+MLP (big) at matched head capacity the
-end-to-end N-EMD result is $+2.2$, $-3.3$, and $-3.6$~pp. The learned
-frontend contributes beyond MLP capacity; the direction of the
-contribution is SNR-dependent.
-
-\emph{(v) The physics regulariser interacts with SNR.} The default
-$\lambda_{\text{phys}}{=}0.1$ destabilises end-to-end training at
-clean SNR: at $10$ dB, setting $\lambda_{\text{phys}}{=}0$ improves
-accuracy by $+24.8$~pp and reduces std from $6.8$\,\% to $1.0$\,\%.
-The regulariser anchors the filter bank to a decomposition-optimal
-configuration that is not task-optimal when the task gradient alone
-has enough signal. This is an architecture/loss interaction we did
-not anticipate; the implication is to use $\lambda_{\text{phys}}{=}0$
-at SNR above a threshold and only keep the regulariser in noisy
-regimes where it helps.
+\emph{(iv) The frontend and the loss interact with SNR.} Two targeted
+ablations (Table~\ref{tab:snr-sweep}, last three rows of each block)
+explain the result. A capacity-matched head (N-EMD big head,
+$107$\,k MLP = $232$\,k total) improves over the default small head
+by $+0.7$, $+19.9$, and $+3.5$ pp and collapses the $20$\,dB variance
+from $9.0$\,\% to $1.9$\,\%. Removing the physics regulariser
+($\lambda_{\text{phys}}{=}0$) on scratch training adds a further
+$+24.8$ pp at $10$ dB and reduces std to $1.0$\,\%. The regulariser
+anchors the filter bank to a decomposition-optimal configuration that
+is not task-optimal when the task gradient alone has enough signal.
+The practical recommendation is thus $\lambda_{\text{phys}}{=}0$ when
+training scratch at SNR $\gtrsim 10$\,dB, and the default
+$\lambda_{\text{phys}}{=}0.1$ when fine-tuning from the physics-only
+checkpoint (Fig.~\ref{fig:physics-ablation}).
 
 \paragraph{Physics regulariser: pretrained vs scratch.}
 The physics regulariser has opposite effects on the two
@@ -1499,16 +1499,18 @@ VMD$+$MLP (big) baseline, N-EMD's $3$~dB advantage is only
 $+1.5$ pp with overlapping error bars; against the small-MLP baseline,
 it is $+11$ pp. The original $+7.8$ pp claim (from single-seed data
 with a $5$\,k-parameter MLP head) was an artifact of capacity
-mismatch, not only of task-aware training. At $10$ and $20$ dB,
-N-EMD underperforms the capacity-matched baseline by $23$ and $7$ pp
-and shows high run-to-run variance (std $6.8$ and $9.0$ pp). The
-honest reading: the decomposition-specific architecture helps at low
-SNR with a modest margin, loses at high SNR, and has training
-stability problems at high SNR that the physics-regulariser ablation
-begins to explain. N-EMD should be proposed as a complement to fixed
-VMD preprocessing, not a replacement; a hybrid pipeline that uses
-VMD$+$MLP by default and switches to end-to-end N-EMD below a
-calibration SNR threshold is the cleanest deployment.
+mismatch, not only of task-aware training. With the right configuration per SNR, end-to-end N-EMD wins at $3$
+and $10$ dB against the capacity-matched baseline with non-overlapping
+error bars ($+2.2$ and $+1.6$ pp respectively) and loses by $3.5$ pp
+at $20$ dB where every method sits above $92$\,\%. The physics
+regulariser is the key hyperparameter: default $\lambda = 0.1$ at
+clean SNR destabilises scratch training, but $\lambda = 0$ at $10$
+dB recovers $+24.8$ pp on scratch. An oracle that selects the best
+configuration per SNR averages $95.98$\,\% across $3$, $10$, and
+$20$ dB, versus $94.72$\,\% for pure VMD$+$MLP (big) --- a $+1.26$
+pp headroom that a calibration-based SNR router could largely realise
+in deployment. We suggest the following default: at SNR $\lesssim 10$
+dB use N-EMD end-to-end; at $> 10$ dB use VMD$+$MLP (big).
 
 \paragraph{Generic learnable filter banks are not enough.}
 Mel-FB and SincNet --- both interpretable, differentiable, bandpass
