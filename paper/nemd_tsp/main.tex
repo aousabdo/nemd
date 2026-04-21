@@ -1302,18 +1302,33 @@ in the low-SNR regime, is of modest magnitude against a properly-
 tuned baseline, and comes with a training-instability penalty at
 higher SNR that is only partly understood.
 
-\paragraph{Physics-regulariser ablation.}
-The raw CNN sits at $99$\,\% across all SNR levels; it needs no
-bandpass decomposition to solve this task. A pretrained-initialisation
-variant of N-EMD, fine-tuned with the same $0.1{\times}$ physics
-regulariser used in training, reaches only $\approx 0.72$\,\% at
-$10$ and $20$ dB in single-seed runs --- substantially worse than
-scratch. Fig.~\ref{fig:physics-ablation} sweeps the regulariser
-weight at SNR $10$ dB over $\lambda_{\text{phys}} \in \{0, 0.01,
-0.1, 1.0\}$ on two seeds. The hypothesis is that for clean-signal
-inputs the physics-optimal partition is close enough to VMD's that
-the regulariser actively fights the classifier; the ablation tests
-whether loosening or removing it recovers performance.
+\paragraph{Physics-regulariser ablation and training stability.}
+An earlier single-seed run of the pretrained-initialisation variant
+at SNR $10$ dB produced an anomalously low $72$\,\% accuracy, which
+we initially attributed to a regulariser--classifier conflict.
+Fig.~\ref{fig:physics-ablation} sweeps
+$\lambda_{\text{phys}} \in \{0, 0.01, 0.1, 1.0\}$ on two seeds and
+disproves that hypothesis: the default $\lambda = 0.1$ is the
+accuracy sweet spot ($89.7{\pm}1.3$\,\%); removing the regulariser
+($\lambda = 0$) and over-weighting it ($\lambda = 1$) both degrade
+performance. The original low number was a single-seed outlier. Two
+substantive findings remain: (a) the physics regulariser is helpful,
+not harmful, at its default weight; (b) the scratch variant has
+substantially higher run-to-run variance at higher SNR (std
+$6.8$--$9.0$\,\%) than the pretrained variant, so pretraining on
+synthetic decomposition data stabilises task-aware fine-tuning.
+Pretrained$+$fine-tuned is the recommended training regime.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/physics_ablation.png}
+\caption{Physics-regulariser weight sweep for the pretrained N-EMD
+classifier at SNR $10$ dB (two seeds; error bars are one standard
+deviation). The default $\lambda_{\text{phys}} = 0.1$ is the sweet
+spot; neither removing the regulariser nor over-weighting it
+improves accuracy.}
+\label{fig:physics-ablation}
+\end{figure}
 
 \begin{figure}[t]
 \centering
@@ -1381,27 +1396,27 @@ biomedical data without retraining.}
 \end{figure}
 
 \paragraph{Classification is a dataset-level null.}
-On the canonical three-class (attention condition) and six-class
-(condition $\times$ subject-group) classification tasks defined for the
-dataset, none of the five pipelines reaches above chance by a
-reliable margin. Averaged over three seeds, three-class accuracies are:
-raw CNN $0.376 \pm 0.008$, EMD+MLP $0.346 \pm 0.008$, VMD+MLP
-$0.372 \pm 0.008$, N-EMD pretrained $0.330 \pm 0.014$, N-EMD scratch
-$0.351 \pm 0.018$ --- all within $\pm 4$ percentage points of chance
-($1/3$). Six-class accuracies are similarly uninformative (all below
-$0.26$ against chance $1/6 \approx 0.167$, $<\!10$~pp above chance).
-The null is consistent across all five pipelines, including the
-non-interpretable raw-CNN ceiling --- a strong indication that single
+On three canonical classification formulations --- 2-class (control
+vs.\ memory task, majority $67$\,\%), 3-class (attention condition),
+6-class (condition $\times$ subject-group) --- none of the tested
+pipelines reaches above the majority-class baseline by a reliable
+margin under a subject-level split. 2-class accuracy across
+$\{$EMD$+$MLP, VMD$+$MLP, VMD$+$MLP (big), Mel-FB$+$MLP$\}$ is
+$0.667 \pm 0.001$ over three seeds, with balanced accuracy pinned at
+$0.500$ --- every pipeline learns to predict majority. For 3-class,
+accuracies across five pipelines are within $\pm 4$ pp of chance
+$(1/3)$; 6-class is similarly uninformative. The null is consistent
+across all pipelines and tasks --- a strong indication that single
 pupillary-response traces alone, without concurrent behavioural or
 physiological covariates, carry insufficient class-discriminative
-information. We therefore read this experiment as a decomposition-quality
-transfer result rather than a downstream-task result: N-EMD's
-architectural guarantees hold on real biomedical data
+information in this dataset. We therefore read this experiment as a
+decomposition-quality transfer result rather than a downstream-task
+result: N-EMD's architectural guarantees hold on real biomedical data
 (Fig.~\ref{fig:pupil-decomp} and the OI/ER numbers above) without
-retraining, but separating this particular set of experimental
-conditions is not doable by decomposition-then-classify with any of
-the methods we tested. A real-world task win is a natural next step
-and is outside the scope of this paper.
+retraining, but separating this set of experimental conditions is not
+doable by decomposition-then-classify with any of the methods we
+tested. A real-world task win is a natural next step and is outside
+the scope of this paper.
 
 % ---------------------------------------------------------------------
 \subsection{Computational Cost}

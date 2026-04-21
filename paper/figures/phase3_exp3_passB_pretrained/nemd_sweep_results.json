@@ -1,0 +1,33 @@
+{
+  "config": {
+    "snr_list": [
+      3.0,
+      20.0
+    ],
+    "seeds": [
+      42,
+      43
+    ],
+    "variants": [
+      "pretrained"
+    ],
+    "n_train": 1000,
+    "n_val": 200,
+    "n_test": 200,
+    "n_samples": 1024,
+    "sample_rate": 1000.0,
+    "epochs_nemd": 50,
+    "nemd_ckpt": "checkpoints_p25b_v3/final.pt"
+  },
+  "snr_results": {
+    "snr_3_db": {
+      "seed_42": {
+        "nemd_pretrained": {
+          "test_acc": 0.8149999976158142,
+          "n_params": 130310,
+          "wallclock_sec": 272.6624980409979
+        }
+      }
+    }
+  }
+}
