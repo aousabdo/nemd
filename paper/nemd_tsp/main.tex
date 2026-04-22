@@ -1354,7 +1354,24 @@ and $2.2$\,pp behind the baseline's $95.67$ and $95.83$\,\% where the
 raw CNN itself is at $99.83$ and $99.67$\,\%. The task-aware
 advantage is genuine at low SNR and small in the near-ceiling regime.
 
-\emph{(iv) Ablations: head capacity and physics-regulariser weight.}
+\emph{(iv) Parametric-POU baseline: how much of the win is the
+learned analyzer?} To separate the contribution of the softmax
+partition-of-unity constraint from the contribution of the learned
+analyzer, we replace the analyzer with a bank of $K = 3$ Gaussian
+bumps over frequency with learnable centre and bandwidth (two scalar
+parameters per filter; six total frontend parameters), normalised to
+sum to one at every frequency bin. This satisfies the same POU
+identity as NAFB but has no neural analyzer. Feeding its IMFs into
+the same $107$\,k MLP head and training end-to-end (three seeds each)
+gives $92.61 \pm 1.26$\,\% at $3$\,dB, $94.00 \pm 0.83$\,\% at
+$10$\,dB, and $94.39 \pm 1.63$\,\% at $20$\,dB. This is comparable
+to NAFB at $10$ and $20$\,dB (within $0.4$--$0.8$\,pp, error bars
+overlap) and $2.4$\,pp below NAFB at $3$\,dB. The POU constraint
+recovers most of the decomposition-based performance; the learned
+analyzer's added value is concentrated at low SNR where a flexible
+per-input allocation of frequency-axis coverage can matter.
+
+\emph{(v) Ablations: head capacity and physics-regulariser weight.}
 Two ablations on top of the default explain the bulk of the spread in
 Table~\ref{tab:snr-sweep}. The small-head variant
 ($5$\,k-parameter MLP on top of the same analyzer) matches the default
@@ -1604,11 +1621,13 @@ method sits above $92$\,\% and the raw CNN is above $99$\,\%. The
 end-to-end advantage is concentrated where task-aware training
 matters most; at clean SNR the fixed-preprocessing pipeline is
 already near the raw-CNN ceiling and there is little headroom for
-the learned frontend. The ablation in paragraph (iv) of
-Section~\ref{sec:taskaware} shows that further tuning (notably
+the learned frontend. The ablations in paragraphs (iv)--(v) of
+Section~\ref{sec:taskaware} show that most of the gap is recovered
+by a much simpler parametric partition-of-unity frontend (six
+learnable parameters total), and that further tuning (notably
 $\lambda_{\text{phys}} = 0$ for scratch at clean SNR) can narrow or
 reverse the $10$--$20$\,dB gap but adds a configuration knob; we do
-not include it in the default pipeline. A hybrid deployment that
+not include either of these in the default pipeline. A hybrid deployment that
 switches between VMD$+$MLP (big) and end-to-end NAFB based on
 estimated SNR is a natural direction but outside the scope of a
 single-method paper.
