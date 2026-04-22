@@ -504,11 +504,13 @@ class NEMD(nn.Module):
         kernel_size: int = 5,
         sample_rate: float = 1000.0,
         temperature: float = 1.0,
+        use_phase: bool = True,
     ) -> None:
         super().__init__()
         self.num_imfs = num_imfs
         self.sample_rate = sample_rate
         self.temperature = temperature
+        self.use_phase = use_phase
         self.analyzer = SignalAnalyzer(
             num_imfs=num_imfs,
             hidden_dim=hidden_dim,
@@ -562,7 +564,11 @@ class NEMD(nn.Module):
         # rather than X.angle() so the graph runs on Apple-Silicon MPS
         # (aten::angle is CPU-only as of torch 2.5).
         mag = X.abs()
-        phase = torch.atan2(X.imag, X.real)
+        if self.use_phase:
+            phase = torch.atan2(X.imag, X.real)
+        else:
+            # Magnitude-only ablation: zero phase channel, preserve shape.
+            phase = torch.zeros_like(mag)
         spectrum_input = torch.stack([mag, phase], dim=1)  # (B, 2, n_freqs)
 
         # Predict filter log-responses

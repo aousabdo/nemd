@@ -1,0 +1,125 @@
+{
+  "config": {
+    "seeds": [
+      45,
+      46
+    ],
+    "n_epochs": 50,
+    "fs": 1000.0,
+    "n_samples": 1024
+  },
+  "nemd_default": {
+    "snr_3_db": {
+      "seed_45": {
+        "test_acc": 0.9433333277702332,
+        "n_params": 232198,
+        "wallclock_sec": 323.5337409580243
+      },
+      "seed_46": {
+        "test_acc": 0.9599999785423279,
+        "n_params": 232198,
+        "wallclock_sec": 271.85442966700066
+      }
+    },
+    "snr_10_db": {
+      "seed_45": {
+        "test_acc": 0.9383333325386047,
+        "n_params": 232198,
+        "wallclock_sec": 259.52672449999955
+      },
+      "seed_46": {
+        "test_acc": 0.9333333373069763,
+        "n_params": 232198,
+        "wallclock_sec": 349.395466957998
+      }
+    },
+    "snr_20_db": {
+      "seed_45": {
+        "test_acc": 0.9583333134651184,
+        "n_params": 232198,
+        "wallclock_sec": 268.098424582975
+      },
+      "seed_46": {
+        "test_acc": 0.95333331823349,
+        "n_params": 232198,
+        "wallclock_sec": 260.6362367089605
+      }
+    }
+  },
+  "nemd_small_head": {
+    "snr_3_db": {
+      "seed_45": {
+        "test_acc": 0.9566666483879089,
+        "n_params": 130310,
+        "wallclock_sec": 310.53466033400036
+      },
+      "seed_46": {
+        "test_acc": 0.9133333563804626,
+        "n_params": 130310,
+        "wallclock_sec": 265.9458979580086
+      }
+    },
+    "snr_10_db": {
+      "seed_45": {
+        "test_acc": 0.9166666865348816,
+        "n_params": 130310,
+        "wallclock_sec": 266.9988046250073
+      },
+      "seed_46": {
+        "test_acc": 0.8016666769981384,
+        "n_params": 130310,
+        "wallclock_sec": 260.7498606250156
+      }
+    },
+    "snr_20_db": {
+      "seed_45": {
+        "test_acc": 0.9150000214576721,
+        "n_params": 130310,
+        "wallclock_sec": 265.19605816702824
+      },
+      "seed_46": {
+        "test_acc": 0.971666693687439,
+        "n_params": 130310,
+        "wallclock_sec": 260.0477367080166
+      }
+    }
+  },
+  "nemd_lambda0": {
+    "snr_3_db": {
+      "seed_45": {
+        "test_acc": 0.9200000166893005,
+        "n_params": 130310,
+        "wallclock_sec": 275.3963587919716
+      },
+      "seed_46": {
+        "test_acc": 0.8233333230018616,
+        "n_params": 130310,
+        "wallclock_sec": 259.66959012503503
+      }
+    },
+    "snr_10_db": {
+      "seed_45": {
+        "test_acc": 0.9599999785423279,
+        "n_params": 130310,
+        "wallclock_sec": 366.1931819169549
+      },
+      "seed_46": {
+        "test_acc": 0.8083333373069763,
+        "n_params": 130310,
+        "wallclock_sec": 265.5847640829743
+      }
+    },
+    "snr_20_db": {
+      "seed_45": {
+        "test_acc": 0.9016666412353516,
+        "n_params": 130310,
+        "wallclock_sec": 259.9766810410074
+      },
+      "seed_46": {
+        "test_acc": 0.8333333134651184,
+        "n_params": 130310,
+        "wallclock_sec": 259.9887296659872
+      }
+    }
+  }
+}

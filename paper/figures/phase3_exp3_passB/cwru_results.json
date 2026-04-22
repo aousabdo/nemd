@@ -1,0 +1,36 @@
+{
+  "config": {
+    "fs": 12000.0,
+    "win": 1024,
+    "stride": 1024,
+    "classes": [
+      "normal",
+      "inner_race",
+      "ball",
+      "outer_race"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "n_epochs": 30,
+    "n_windows": 3080,
+    "class_counts": [
+      1656,
+      476,
+      473,
+      475
+    ]
+  },
+  "results": {
+    "nafb_default": {
+      "accs": [
+        0.9802259802818298,
+        0.8349788188934326,
+        0.8848314881324768
+      ],
+      "n_params_reported": 232519
+    }
+  }
+}
