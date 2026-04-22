@@ -44,13 +44,13 @@ PIPELINE_ORDER = [
     ("vmd_mlp_big",     "VMD+MLP (big)",          "#225599"),
     ("mel_fb_mlp",      "Mel-FB+MLP",             "#aa8833"),
     ("sincnet_mlp",     "SincNet+MLP",            "#cc9933"),
-    ("nemd_pretrained", "N-EMD pre.\\ (e2e)",     "#bb5555"),
-    ("nemd_scratch",    "N-EMD scratch (e2e)",    "#cc3344"),
+    ("nemd_big_head",   "N-EMD (default, e2e)",   "#cc3344"),
 ]
 
 
-def aggregate(sweep: dict, nemd_sweep: dict | None = None) -> dict:
-    """Combine cheap and N-EMD sweeps into per-pipeline (snr, mean, std) arrays."""
+def aggregate(sweep: dict, nemd_sweep: dict | None = None,
+              phaseC: dict | None = None) -> dict:
+    """Combine all sweeps into per-pipeline (snr, mean, std) arrays."""
     agg: dict = {}
     for snr_key, seeds in sweep["snr_results"].items():
         snr = int(snr_key.split("_")[1])
@@ -63,6 +63,15 @@ def aggregate(sweep: dict, nemd_sweep: dict | None = None) -> dict:
             for seed_key, pipes in seeds.items():
                 for pname, pd in pipes.items():
                     agg.setdefault(pname, {}).setdefault(snr, []).append(pd["test_acc"])
+    if phaseC is not None:
+        # Phase C structure: phaseC["nemd_big_head"]["snr_3_db"]["seed_42"] = {test_acc: ...}
+        for exp in ("nemd_big_head",):
+            if exp not in phaseC:
+                continue
+            for snr_key, seeds in phaseC[exp].items():
+                snr = int(snr_key.split("_")[1])
+                for sd in seeds.values():
+                    agg.setdefault(exp, {}).setdefault(snr, []).append(sd["test_acc"])
     return agg
 
 
@@ -161,7 +170,11 @@ if __name__ == "__main__":
     nemd_path = PASSB / "nemd_sweep_results.json"
     if nemd_path.exists():
         nemd_sweep = json.load(open(nemd_path))
-    agg = aggregate(sweep, nemd_sweep)
+    phaseC = None
+    pc_path = PASSB / "phaseC_results.json"
+    if pc_path.exists():
+        phaseC = json.load(open(pc_path))
+    agg = aggregate(sweep, nemd_sweep, phaseC)
     figure_snr_sweep_ci(agg)
 
     ablation_path = PASSB / "physics_ablation.json"
