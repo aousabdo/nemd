@@ -1,0 +1,64 @@
+{
+  "config": {
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "n_epochs": 50,
+    "use_phase": false
+  },
+  "nemd_magonly": {
+    "snr_3_db": {
+      "seed_42": {
+        "test_acc": 0.9516666531562805,
+        "n_params": 232198,
+        "wallclock_sec": 291.12468500004616
+      },
+      "seed_43": {
+        "test_acc": 0.9350000023841858,
+        "n_params": 232198,
+        "wallclock_sec": 264.61353362497175
+      },
+      "seed_44": {
+        "test_acc": 0.9449999928474426,
+        "n_params": 232198,
+        "wallclock_sec": 258.73847195802955
+      }
+    },
+    "snr_10_db": {
+      "seed_42": {
+        "test_acc": 0.9633333086967468,
+        "n_params": 232198,
+        "wallclock_sec": 258.7014983749832
+      },
+      "seed_43": {
+        "test_acc": 0.9416666626930237,
+        "n_params": 232198,
+        "wallclock_sec": 260.6931265000021
+      },
+      "seed_44": {
+        "test_acc": 0.9233333468437195,
+        "n_params": 232198,
+        "wallclock_sec": 259.38968579203356
+      }
+    },
+    "snr_20_db": {
+      "seed_42": {
+        "test_acc": 0.9133333563804626,
+        "n_params": 232198,
+        "wallclock_sec": 259.8658444999601
+      },
+      "seed_43": {
+        "test_acc": 0.7983333468437195,
+        "n_params": 232198,
+        "wallclock_sec": 260.64757804200053
+      },
+      "seed_44": {
+        "test_acc": 0.925000011920929,
+        "n_params": 232198,
+        "wallclock_sec": 260.3702977920184
+      }
+    }
+  }
+}

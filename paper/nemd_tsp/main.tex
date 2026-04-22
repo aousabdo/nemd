@@ -1371,7 +1371,21 @@ recovers most of the decomposition-based performance; the learned
 analyzer's added value is concentrated at low SNR where a flexible
 per-input allocation of frequency-axis coverage can matter.
 
-\emph{(v) Ablations: head capacity and physics-regulariser weight.}
+\emph{(v) Magnitude-only ablation: the phase channel.} Remark~2 in
+Section~\ref{subsec:arch} argued informally that the phase channel
+lets the analyzer distinguish signals with identical power spectra
+but different temporal structure. A targeted ablation zeroes the
+phase input (keeping the two-channel analyzer shape) and retrains
+end-to-end over three seeds per SNR. Accuracies: $94.39 \pm 0.68$\,\%
+at $3$\,dB (within the default's error bar), $94.28 \pm 1.63$\,\% at
+$10$\,dB (marginally above the default at $92.87$ within overlapping
+bars), and $87.89 \pm 5.72$\,\% at $20$\,dB ($-5.7$\,pp below the
+default with high variance). Phase becomes useful specifically at
+clean SNR, where temporal structure can be exploited; at noisy SNR
+the analyzer operates essentially on the magnitude spectrum. We
+retain phase in the default configuration.
+
+\emph{(vi) Ablations: head capacity and physics-regulariser weight.}
 Two ablations on top of the default explain the bulk of the spread in
 Table~\ref{tab:snr-sweep}. The small-head variant
 ($5$\,k-parameter MLP on top of the same analyzer) matches the default
@@ -1621,13 +1635,14 @@ method sits above $92$\,\% and the raw CNN is above $99$\,\%. The
 end-to-end advantage is concentrated where task-aware training
 matters most; at clean SNR the fixed-preprocessing pipeline is
 already near the raw-CNN ceiling and there is little headroom for
-the learned frontend. The ablations in paragraphs (iv)--(v) of
-Section~\ref{sec:taskaware} show that most of the gap is recovered
-by a much simpler parametric partition-of-unity frontend (six
-learnable parameters total), and that further tuning (notably
+the learned frontend. The ablations in paragraphs (iv)--(vi) of
+Section~\ref{sec:taskaware} show (a) that most of the gap is recovered
+by a much simpler parametric partition-of-unity frontend with six
+learnable parameters total; (b) that the phase channel helps mainly
+at clean SNR; and (c) that further tuning (notably
 $\lambda_{\text{phys}} = 0$ for scratch at clean SNR) can narrow or
-reverse the $10$--$20$\,dB gap but adds a configuration knob; we do
-not include either of these in the default pipeline. A hybrid deployment that
+reverse the $10$--$20$\,dB gap but adds a configuration knob. None of
+these are in the default pipeline. A hybrid deployment that
 switches between VMD$+$MLP (big) and end-to-end NAFB based on
 estimated SNR is a natural direction but outside the scope of a
 single-method paper.
