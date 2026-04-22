@@ -1224,9 +1224,13 @@ Seven approaches, chosen to separate the contribution of filter-bank
 preprocessing, learned vs.\ fixed filters, classifier head capacity,
 and end-to-end task-aware training. (1)~\emph{Raw CNN}: three 1-D
 conv layers with pooling and an MLP head ($81$\,k params); no
-decomposition. (2)~\emph{EMD+MLP (fixed)}: EMD $\to$ 9 features (log-
-energy, spectral centroid, bandwidth per IMF) $\to$ MLP
-$9{\to}64{\to}64{\to}3$ ($5$\,k params). (3)~\emph{VMD+MLP (small)}:
+decomposition. (2)~\emph{EMD+MLP (fixed)}: EMD $\to$ 9 features per signal (log-
+energy, spectral centroid, and spectral bandwidth per IMF) $\to$ MLP
+$9{\to}64{\to}64{\to}3$ ($5$\,k params). A richer feature set
+(e.g.\ Hilbert-instantaneous-frequency statistics, higher moments)
+would give a stronger fixed baseline; we use the minimal set above
+to keep the frontend-vs-head factorisation clean. The capacity-match
+baseline below operates on the same features. (3)~\emph{VMD+MLP (small)}:
 same with VMD. (4)~\emph{VMD+MLP (big)}: VMD features, larger MLP
 $9{\to}320{\to}320{\to}3$ matching N-EMD's capacity ($107$\,k
 params); the capacity-match baseline requested by reviewers.
@@ -1249,11 +1253,13 @@ displays the same data graphically. Three patterns are visible.
 
 \begin{table}[t]
 \centering
-\caption{Three-class classification, multi-seed. Cheap baselines: 5
-seeds; N-EMD scratch: 3 seeds; N-EMD pretrained: 2 seeds (SNRs 3, 20)
-and $\lambda_{\text{phys}}=0.1$ row of the ablation at SNR 10.
-``VMD+MLP (big)'' is the capacity-matched VMD baseline ($107$\,k
-params). Bold marks the best non-raw-CNN pipeline in each SNR block.}
+\caption{Three-class classification, multi-seed. Cheap baselines:
+$5$ seeds; all N-EMD rows: $3$ seeds. ``VMD+MLP (big)'' is the
+capacity-matched VMD baseline ($107$\,k params); ``N-EMD (e2e, big
+head)'' matches its head capacity. All N-EMD rows use scratch
+initialisation. Bold marks the best non-raw-CNN pipeline in each SNR
+block; pretrained-initialisation numbers appear only in the
+physics-regulariser discussion.}
 \label{tab:snr-sweep}
 \setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{rlccr}

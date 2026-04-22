@@ -27,6 +27,15 @@
           "wallclock_sec": 306.4087596249883
         }
       }
+    },
+    "snr_20_db": {
+      "seed_44": {
+        "nemd_pretrained": {
+          "test_acc": 0.9433333277702332,
+          "n_params": 130310,
+          "wallclock_sec": 279.2931414999766
+        }
+      }
     }
   }
 }
