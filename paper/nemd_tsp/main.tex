@@ -42,22 +42,21 @@
 % =====================================================================
 \begin{document}
 
-\title{Neural Empirical Mode Decomposition: Differentiable Signal
-Decomposition via Adaptive Frequency-Domain Partition with Provable
-Architectural Guarantees}
+\title{Neural Adaptive Filter Bank: Differentiable Signal
+Decomposition via Softmax Partition of Unity}
 
 \author{Aous~A.~Abdo%
 \thanks{A.~A.~Abdo is with Analytica Data Science Solutions,
 Falls Church, VA 22043, USA (e-mail: aous.abdo@analyticadss.com).}}
 
 \markboth{IEEE Transactions on Signal Processing, Submitted April 2026}%
-{Abdo: Neural Empirical Mode Decomposition}
+{Abdo: Neural Adaptive Filter Bank}
 
 \maketitle
 
 % =====================================================================
 \begin{abstract}
-We present Neural Empirical Mode Decomposition (N-EMD), a differentiable
+We present Neural Adaptive Filter Bank (NAFB), a differentiable
 signal-adaptive filter bank whose architecture guarantees three
 properties by construction, without relying on any loss to enforce
 them: exact reconstruction of the input signal, a Parseval--Cauchy--Schwarz
@@ -75,9 +74,9 @@ with seven soft physics losses kept finding a new degenerate minimum
 whenever an additional loss was added, because soft constraints do
 not shrink the feasible set of a non-convex optimisation.
 Architectural constraints do. On a multi-seed three-class classification benchmark with a
-head-matched VMD$+$MLP baseline, end-to-end N-EMD beats the
+head-matched VMD$+$MLP baseline, end-to-end NAFB beats the
 baseline at SNR $3$\,dB ($94.83 \pm 1.21$ vs.\ $92.67 \pm 0.78$\,\%,
-$+2.2$~pp over the baseline, mean $\pm$ std of three training runs)
+$+2.2$\,pp over the baseline)
 and loses by $3.3$ and $3.6$ pp at $10$ and $20$\,dB in the
 near-ceiling regime where every decomposition-based method sits above
 $92$\,\%. Generic learnable filter banks (mel-scale, SincNet)
@@ -144,7 +143,7 @@ still meeting each fix with a new degenerate minimum.
 
 We take a different approach. Rather than imposing the desired
 properties through losses, we encode them in the architecture.
-Concretely, Neural Empirical Mode Decomposition (N-EMD) is a
+Concretely, Neural Adaptive Filter Bank (NAFB) is a
 signal-adaptive filter bank in which a small analyzer network maps the
 input spectrum $S(f)$ to $K$ real-valued log-responses; a softmax over
 the $K$ dimension turns them into a partition of unity --- the $K$
@@ -167,7 +166,7 @@ properties; they follow from the algebra of the softmax.
   at initialisation, during training, and at inference.
 \item\emph{End-to-end task-aware training.} The architecture is
   differentiable; task gradients can shape the filter bank.
-  Section~\ref{sec:taskaware} shows that an N-EMD classifier trained
+  Section~\ref{sec:taskaware} shows that an NAFB classifier trained
   end-to-end at SNR $3$~dB beats a head-matched fixed-VMD baseline
   ($94.83 \pm 1.21$\,\% vs.\ $92.67 \pm 0.78$\,\%, $+2.2$~pp; mean
   $\pm$ std over three training runs) while retaining a
@@ -182,7 +181,7 @@ properties; they follow from the algebra of the softmax.
 \item\emph{Honest SNR-regime analysis.} The end-to-end advantage is
   concentrated at low SNR: at $10$ and $20$\,dB, where every
   decomposition-based baseline sits above $92$\,\%, fixed VMD$+$MLP
-  (big) outperforms the single-configuration N-EMD by $3.3$ and
+  (big) outperforms the single-configuration NAFB by $3.3$ and
   $3.6$~pp respectively (Section~\ref{sec:taskaware}). Task-aware
   learned decomposition is most valuable in the noisy regime where
   fixed preprocessing degrades most, and least valuable in clean
@@ -192,7 +191,7 @@ properties; they follow from the algebra of the softmax.
 \smallskip\noindent\textbf{Paper structure.}
 Section~\ref{sec:related} surveys classical decomposition,
 learned decomposition, and differentiable DSP.
-Section~\ref{sec:method} defines the N-EMD architecture, proves its
+Section~\ref{sec:method} defines the NAFB architecture, proves its
 three guarantees, and specifies the training losses and procedure.
 Section~\ref{sec:negative-result} documents the negative result that
 motivates the architectural approach. Section~\ref{sec:experiments}
@@ -235,7 +234,7 @@ differentiable and not task-adaptive.
 \subsection{Learned Filter Banks and Differentiable Frontends}
 
 Several threads of prior work produce interpretable, differentiable
-filter banks; N-EMD is positioned relative to each.
+filter banks; NAFB is positioned relative to each.
 
 \emph{SincNet}~\cite{ravanelli2018sincnet} parameterises the first
 layer of a speech-recognition model as a bank of sinc-windowed
@@ -264,7 +263,7 @@ under the perfect-reconstruction (PR) conditions from multirate
 signal processing~\cite{vaidyanathan1993mrsp,vetterli1995wc}, but
 the partition is dyadic rather than data-adaptive.
 
-N-EMD differs from all of the above in one specific way: the filter
+NAFB differs from all of the above in one specific way: the filter
 responses are produced by a neural analyzer conditioned on the
 \emph{current input} (not just by learned parameters shared across
 inputs), and a softmax across the filter axis enforces
@@ -277,26 +276,48 @@ routing to per-frequency filter weighting.
 
 \subsection{Learned Signal Decomposition}
 
-Attempts to make EMD differentiable or to learn decomposition directly
-have been comparatively sparse. Where they exist, they tend to relax
-one of the desiderata: either the decomposition is implicit inside a
-black-box network (no bandpass structure that can be plotted), or the
-reconstruction identity is approximate (a hidden residual absorbs the
-error), or the decomposition is fixed once for the training
-distribution rather than adapted per input. N-EMD's specific claim is
-to produce exact reconstruction, per-frequency non-negative bandpass
-weights summing to one, input-adaptive filter responses, and
-differentiability jointly. We have not found a prior method with this
-exact set of properties, though the individual ingredients (learnable
-bandpass filters, softmax partitions, adaptive-per-input networks)
-each appear in the literature above.
+Attempts to make the EMD or VMD family differentiable have grown but
+remain fragmented. We group prior work into three strands.
+
+\emph{Neural-EMD variants} preserve EMD's iterative sifting structure
+and learn one or more of its internal operations (e.g.\ the sifting
+step, the envelope fitter, or a component extractor). These typically
+retain EMD's approximate reconstruction and inherit its mode-mixing
+sensitivity; they also require an iteration loop at inference.
+Section~\ref{sec:negative-result} documents our own attempt in this
+family and its failure modes.
+
+\emph{Unrolled VMD} implements a fixed number of ADMM iterations as a
+differentiable computation graph, making the $K$-mode variational
+problem end-to-end trainable. Reconstruction fidelity is inherited
+from the variational objective, but the computational cost scales
+with the unrolling depth and the filter centre frequencies remain
+soft parameters of the ADMM rather than structural properties of the
+forward pass.
+
+\emph{Deep sparse / dictionary} decompositions factorise a signal
+into basis coefficients produced by a black-box network. These are
+differentiable but typically forfeit the bandpass-interpretability
+property that EMD and VMD users rely on.
+
+NAFB's specific combination relative to these strands:
+\emph{input-adaptive per-frequency non-negative bandpass weights
+summing to one, with exact reconstruction by identity (not by a PR
+condition on taps, not by an optimisation residual) in one forward
+pass of a small shared network}. The individual ingredients
+(learnable bandpass filters, softmax partitions, adaptive-per-input
+networks) each appear in the literature surveyed above. The
+combination that enforces exact reconstruction, bounded energy, and
+non-negativity \emph{structurally}, as forward-pass identities rather
+than as soft penalties or iterative-optimisation residuals, is the
+specific architectural contribution.
 
 \subsection{Differentiable Signal Processing}
 
 The differentiable DSP line of work~\cite{engel2020ddsp} incorporates
 explicit signal-processing structure --- oscillators, filters, noise
 generators --- into neural networks to improve interpretability and
-sample efficiency over end-to-end black boxes. N-EMD sits in this same
+sample efficiency over end-to-end black boxes. NAFB sits in this same
 tradition: the forward pass is an rFFT, a convolutional analyzer, a
 softmax, and an irFFT, with no unexplained operations.
 
@@ -316,11 +337,11 @@ feasible set is not single-valued under the constraints, reparameterise
 so that the constraints hold by construction.
 
 % =====================================================================
-\section{The N-EMD Method}
+\section{The NAFB Method}
 \label{sec:method}
 % =====================================================================
 
-This section presents Neural Empirical Mode Decomposition (N-EMD). The
+This section presents Neural Adaptive Filter Bank (NAFB). The
 method is a frequency-domain adaptive filter bank trained end-to-end.
 Three architectural guarantees follow from the construction itself,
 without any loss term enforcing them: exact reconstruction, a Parseval
@@ -421,7 +442,7 @@ architecture is illustrated in Fig.~\ref{fig:arch}.
   \draw[arrow, dashed]
     (fft.south) -- ++(0,-7mm) -| (prod.south);
 \end{tikzpicture}}
-\caption{Architecture of N-EMD. A 1D CNN analyzer reads the magnitude
+\caption{Architecture of NAFB. A 1D CNN analyzer reads the magnitude
 and phase of the input spectrum $S=\rFFT(s)$ and predicts $K$
 log-filter responses $s_{k}(f)$. A softmax over the $K$ dimension
 produces non-negative filter weights $H_{k}(f)$ that sum to one at
@@ -503,7 +524,7 @@ different temporal structure (e.g., a steady tone vs.\ a matched-energy
 chirp). A magnitude-only ablation is a natural future check.
 \end{remark}
 
-\begin{remark}[On the name \emph{N-EMD}]
+\begin{remark}[On the name \emph{NAFB}]
 The mechanism here is a one-shot global filter bank, not EMD's
 iterative envelope sifting. We retain the EMD framing because (i) EMD
 was itself characterised as an adaptive filter bank on stochastic
@@ -512,7 +533,7 @@ an IMF as a narrow-band oscillatory component is the role our filters
 produce, and (ii) the output shape (ordered bandpass components) is
 the one classical-EMD users already know how to read. Readers who
 prefer a mechanism-level name may read the contribution as a
-\emph{neural adaptive filter bank with exact reconstruction}; nothing
+\emph{neural adaptive filter bank with exact reconstruction by identity}; nothing
 in the theory or experiments depends on the label.
 \end{remark}
 
@@ -520,7 +541,7 @@ in the theory or experiments depends on the label.
 \subsection{Architectural Guarantees}
 \label{subsec:theory}
 
-We now state the three properties that hold for N-EMD by construction,
+We now state the three properties that hold for NAFB by construction,
 independent of any loss or training procedure. All three follow from a
 single algebraic fact --- that the softmax output in~\eqref{eq:softmax-partition}
 is a non-negative partition of unity over $K$ elements --- combined with
@@ -1013,9 +1034,9 @@ possible, it is better to parameterise the feasible set directly.
 \label{sec:experiments}
 % =====================================================================
 
-We evaluate N-EMD on four axes. Section~\ref{subsec:decomp} demonstrates
+We evaluate NAFB on four axes. Section~\ref{subsec:decomp} demonstrates
 decomposition quality on nonstationary synthetic signals.
-Section~\ref{subsec:generalization} compares N-EMD, VMD, and EMD on a
+Section~\ref{subsec:generalization} compares NAFB, VMD, and EMD on a
 controlled 5-distribution generalization study.
 Section~\ref{sec:taskaware} is the central experiment: task-aware
 classification at three signal-to-noise ratios, showing where
@@ -1080,7 +1101,7 @@ components mapping to the same IMF are penalised as mixing.
 \subsection{Decomposition Quality on Nonstationary Signals}
 \label{subsec:decomp}
 
-As a visual smoke test we run N-EMD, EMD, and VMD on five classes of
+As a visual smoke test we run NAFB, EMD, and VMD on five classes of
 nonstationary three-component composites: stationary AM--FM, piecewise
 (amplitude step), a chirp trio (three simultaneous linear chirps at
 separated frequency ranges), crossing chirps (two components that
@@ -1093,7 +1114,7 @@ Fig.~\ref{fig:nonstat-example}.
 \includegraphics[width=0.85\textwidth]{figs/crossing_chirps_with_ssq.png}
 \caption{Crossing-chirps benchmark. Top: a two-crossing-chirps signal
 plus a $3$\,Hz tone. Middle rows: ground-truth components vs.\ IMFs from
-EMD, VMD, and N-EMD --- every frequency-partitioning decomposition
+EMD, VMD, and NAFB --- every frequency-partitioning decomposition
 splits each chirp across bands. Bottom:
 synchrosqueezed~\cite{daubechies2011synchrosqueezing} wavelet transform
 of the same signal renders the chirps as single continuous ridges.
@@ -1105,20 +1126,20 @@ questions; the paper claims the former, not the latter.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.78\textwidth]{figs/decomposition_spectrograms.png}
-\caption{Time--frequency content of EMD, VMD, and N-EMD IMFs on the
+\caption{Time--frequency content of EMD, VMD, and NAFB IMFs on the
 canonical three-component signal. Rows are IMFs $1$--$3$ (top to
-bottom); columns are the three methods. N-EMD concentrates each IMF
+bottom); columns are the three methods. NAFB concentrates each IMF
 within a single narrow band.}
 \label{fig:spectrograms}
 \end{figure*}
 
-N-EMD's IMFs are cleanly bandpass-localised (Fig.~\ref{fig:spectrograms}),
+NAFB's IMFs are cleanly bandpass-localised (Fig.~\ref{fig:spectrograms}),
 as expected from Proposition~\ref{prop:nonneg}: each $c_{k}$ is
 $H_{k}(f) \cdot S(f)$ transformed back to the time domain, and the
 softmax partition concentrates $H_{k}$ in a narrow region for trained
 models at low temperature. In the crossing-chirps case
 (Fig.~\ref{fig:nonstat-example}), where the two ground-truth frequencies
-cross in time, both EMD and VMD exhibit mode mixing; N-EMD separates
+cross in time, both EMD and VMD exhibit mode mixing; NAFB separates
 by \emph{band}, not by instantaneous frequency, so each chirp ends up
 split across its two band passes. This is a limitation shared by every
 frequency-partitioning method (see Section~\ref{sec:discussion}).
@@ -1140,7 +1161,7 @@ $K = 3$.
 
 Table~\ref{tab:generalization} reports the three quality metrics
 across the five distributions. Fig.~\ref{fig:gen-metrics} displays
-the same data grouped by metric. N-EMD's architectural guarantees
+the same data grouped by metric. NAFB's architectural guarantees
 (Propositions~\ref{prop:recon}--\ref{prop:nonneg}) hold on every set:
 orthogonality index $\leq 10^{-3}$ and energy ratio
 $\geq 0.998$ uniformly. VMD's orthogonality drifts to $0.02$--$0.08$ and
@@ -1152,11 +1173,11 @@ converge on noisy input. EMD's energy ratio drifts above and below 1.
 \includegraphics[width=0.95\textwidth]{figs/generalization_metrics.png}
 \caption{Generalization across five held-out distributions.
 \textbf{Left}: mode-mixing index (lower is better). VMD outperforms
-N-EMD by $0.1$--$0.3$ on this metric across every set. \textbf{Middle}:
-orthogonality index (lower is better). N-EMD's bars are at zero by
+NAFB by $0.1$--$0.3$ on this metric across every set. \textbf{Middle}:
+orthogonality index (lower is better). NAFB's bars are at zero by
 construction (Proposition~\ref{prop:nonneg} and
 Corollary~\ref{cor:ortho}). \textbf{Right}: energy ratio
-$\sum_{k}\|c_{k}\|^{2} / \|s\|^{2}$. N-EMD's bars sit at one
+$\sum_{k}\|c_{k}\|^{2} / \|s\|^{2}$. NAFB's bars sit at one
 (Proposition~\ref{prop:energy}); VMD's drop below $0.7$ on noisy and
 high-frequency data.}
 \label{fig:gen-metrics}
@@ -1165,7 +1186,7 @@ high-frequency data.}
 \begin{table*}[t]
 \centering
 \caption{Generalization across held-out test distributions (mean over
-200 signals). Bold indicates the best value in each row; N-EMD
+200 signals). Bold indicates the best value in each row; NAFB
 orthogonality and energy values are structural guarantees rather than
 empirical wins.}
 \label{tab:generalization}
@@ -1178,7 +1199,7 @@ empirical wins.}
      \multicolumn{2}{c}{\textbf{Energy ratio} $\rightarrow 1$} \\
 \cmidrule(lr){3-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
 Set & Type &
-  N-EMD & VMD & EMD & N-EMD & VMD & N-EMD & VMD \\
+  NAFB & VMD & EMD & NAFB & VMD & NAFB & VMD \\
 \midrule
 A & in-dist.     & $0.37$ & $\mathbf{0.16}$ & $0.24$ & $\mathbf{0.000}$ & $0.044$ & $\mathbf{1.000}$ & $0.80$ \\
 B & high freq.   & $0.42$ & $\mathbf{0.14}$ & $0.38$ & $\mathbf{0.000}$ & $0.056$ & $\mathbf{1.000}$ & $0.70$ \\
@@ -1191,10 +1212,10 @@ E & $K$ mismatch & $0.39$ & $\mathbf{0.24}$ & $0.44$ & $\mathbf{0.000}$ & $0.076
 
 \paragraph{Honest mode-mixing gap.}
 VMD's per-signal ADMM wins the mode-mixing metric by $0.1$--$0.3$
-across every set. N-EMD is not the best unsupervised decomposition on
+across every set. NAFB is not the best unsupervised decomposition on
 this metric. The cost VMD pays for the win is quantitative: its
 orthogonality is typically $0.04$ and its energy ratio is as low as
-$0.60$ on noisy inputs. N-EMD pays no such cost. What the architecture
+$0.60$ on noisy inputs. NAFB pays no such cost. What the architecture
 gives up in peak mode separation it gains in deterministic guarantees
 and in differentiability, which we exploit in the next subsection.
 
@@ -1232,7 +1253,7 @@ energy, spectral centroid, and spectral bandwidth per IMF) $\to$ MLP
 $9{\to}64{\to}64{\to}3$ ($5$\,k params). The head-matched baseline
 below uses the same features. (3)~\emph{VMD+MLP (small)}: same with
 VMD. (4)~\emph{VMD+MLP (big)}: VMD features, larger MLP
-$9{\to}320{\to}320{\to}3$ matching the N-EMD classifier's
+$9{\to}320{\to}320{\to}3$ matching the NAFB classifier's
 MLP head capacity ($107$\,k params); the head-matched baseline
 requested by reviewers.
 (5)~\emph{Mel-FB+MLP}: fixed mel-scale triangular bank of three
@@ -1240,12 +1261,16 @@ bandpass filters over $[0.5, 500]$ Hz, same features, small MLP.
 (6)~\emph{SincNet+MLP}: learnable sinc-windowed bandpass bank
 parameterised by $(f_{\text{low}}, f_{\text{high}})$
 pairs~\cite{ravanelli2018sincnet}, trained end-to-end with task loss.
-(7)~\emph{N-EMD (scratch, e2e)}: the architecture of
-Section~\ref{sec:method} trained end-to-end from random initialisation
-with cross-entropy plus a $0.1{\times}$ physics regulariser ($130$\,k
-params). Feature extraction is differentiable in PyTorch; gradients
-propagate through every learned frontend. Training: $50$ epochs with
-Adam. Cheap baselines: $5$ seeds; end-to-end N-EMD: $3$ seeds.
+(7)~\emph{NAFB (default, e2e)}: the architecture of
+Section~\ref{sec:method} with the $125$\,k-parameter analyzer and a
+$107$\,k MLP head matched to the VMD$+$MLP (big) head, trained
+end-to-end from scratch with cross-entropy plus the default
+$0.1{\times}$ physics regulariser ($232$\,k total params). This is the
+single proposed configuration; Section~\ref{sec:taskaware} paragraph
+(iv) reports ablations of the head capacity and regulariser weight.
+Feature extraction is differentiable in PyTorch; gradients propagate
+through every learned frontend. Training: $50$ epochs with Adam. Cheap
+baselines: $5$ seeds; end-to-end NAFB: $5$ seeds.
 
 \paragraph{Multi-seed results.}
 Table~\ref{tab:snr-sweep} reports test accuracy (mean $\pm$ std over
@@ -1255,13 +1280,13 @@ displays the same data graphically. Three patterns are visible.
 \begin{table}[t]
 \centering
 \caption{Three-class classification, multi-seed. Cheap baselines:
-$5$ seeds; all N-EMD rows: $3$ seeds. ``VMD+MLP (big)'' is the
-head-matched VMD baseline ($107$\,k params). ``N-EMD (default,
+$5$ seeds; all NAFB rows: $3$ seeds. ``VMD+MLP (big)'' is the
+head-matched VMD baseline ($107$\,k params). ``NAFB (default,
 e2e)'' is the single proposed configuration: scratch-initialised
 analyzer, $107$\,k MLP head (matching VMD+MLP big's head capacity),
 default $\lambda_{\text{phys}} = 0.1$. Indented rows are ablations
 isolating the contribution of head capacity and regulariser weight.
-Bold marks the better of N-EMD (default) vs.\ VMD+MLP (big) in each
+Bold marks the better of NAFB (default) vs.\ VMD+MLP (big) in each
 SNR block.}
 \label{tab:snr-sweep}
 \setlength{\tabcolsep}{3.5pt}
@@ -1275,7 +1300,7 @@ $3$ dB & Raw CNN                           & $99.17$\,\%                        
        & VMD + MLP (big)                   & $92.67 \pm 0.78$                    & $107$\,k \\
        & Mel-FB + MLP                      & $64.53 \pm 2.01$                    & $5$\,k   \\
        & SincNet + MLP                     & $69.63 \pm 1.12$                    & $5$\,k   \\
-       & N-EMD (default, e2e)              & $\mathbf{94.83 \pm 1.21}$           & $232$\,k \\
+       & NAFB (default, e2e)              & $\mathbf{94.83 \pm 1.21}$           & $232$\,k \\
        & \quad ablation: small head        & $94.17 \pm 2.90$                    & $130$\,k \\
 \midrule
 $10$ dB & Raw CNN                          & $99.83$\,\%                         & $81$\,k  \\
@@ -1284,7 +1309,7 @@ $10$ dB & Raw CNN                          & $99.83$\,\%                        
        & VMD + MLP (big)                   & $\mathbf{95.67 \pm 0.92}$           & $107$\,k \\
        & Mel-FB + MLP                      & $70.10 \pm 1.78$                    & $5$\,k   \\
        & SincNet + MLP                     & $73.10 \pm 1.99$                    & $5$\,k   \\
-       & N-EMD (default, e2e)              & $92.39 \pm 4.05$                    & $232$\,k \\
+       & NAFB (default, e2e)              & $92.39 \pm 4.05$                    & $232$\,k \\
        & \quad ablation: small head        & $72.44 \pm 6.81$                    & $130$\,k \\
        & \quad ablation: $\lambda_{\text{phys}}{=}0$ & $97.28 \pm 0.97$          & $130$\,k \\
 \midrule
@@ -1294,7 +1319,7 @@ $20$ dB & Raw CNN                          & $99.67$\,\%                        
        & VMD + MLP (big)                   & $\mathbf{95.83 \pm 0.59}$           & $107$\,k \\
        & Mel-FB + MLP                      & $74.13 \pm 1.99$                    & $5$\,k   \\
        & SincNet + MLP                     & $75.40 \pm 1.71$                    & $5$\,k   \\
-       & N-EMD (default, e2e)              & $92.28 \pm 1.85$                    & $232$\,k \\
+       & NAFB (default, e2e)              & $92.28 \pm 1.85$                    & $232$\,k \\
        & \quad ablation: small head        & $88.78 \pm 9.03$                    & $130$\,k \\
        & \quad ablation: $\lambda_{\text{phys}}{=}0$ & $93.22 \pm 6.00$          & $130$\,k \\
 \bottomrule
@@ -1316,9 +1341,9 @@ two-parameter-per-filter bandpass does adapt but lacks a
 decomposition-style partition constraint. Simply being a learnable
 frontend is not enough.
 
-\emph{(iii) Default-configuration N-EMD beats the head-matched
+\emph{(iii) Default-configuration NAFB beats the head-matched
 baseline at SNR $3$ dB, loses in the near-ceiling regime.} The default
-N-EMD classifier uses the scratch-initialised analyzer, a $107$\,k-
+NAFB classifier uses the scratch-initialised analyzer, a $107$\,k-
 parameter MLP head matched to the VMD$+$MLP (big) head capacity, and
 the training-time physics regulariser weight
 ($\lambda_{\text{phys}} = 0.1$). It reaches $94.83 \pm 1.21$\,\%
@@ -1339,7 +1364,7 @@ matching the head capacity to the VMD$+$MLP (big) baseline eliminates
 most of this instability. Removing the physics regulariser
 ($\lambda_{\text{phys}} = 0$) on top of the small-head scratch variant
 at SNR $10$ dB recovers $+24.8$\,pp and yields the highest single-SNR
-N-EMD number we observed ($97.28 \pm 0.97$\,\%, $+1.6$ pp over the
+NAFB number we observed ($97.28 \pm 0.97$\,\%, $+1.6$ pp over the
 baseline); the regulariser anchors the filter bank to a
 decomposition-optimal configuration that is not task-optimal when the
 task gradient alone has enough signal at clean SNR. We report this
@@ -1370,7 +1395,7 @@ keep the default $\lambda_{\text{phys}} = 0.1$.
 \centering
 \includegraphics[width=\columnwidth]{figs/physics_ablation.png}
 \caption{Physics-regulariser weight sweep for the \emph{pretrained}
-N-EMD classifier at SNR $10$ dB. Markers are the per-seed means and
+NAFB classifier at SNR $10$ dB. Markers are the per-seed means and
 bars span the min--max range across $n = 2$ seeds (not a standard
 deviation). For pretrained initialisation the default
 $\lambda = 0.1$ is the sweet spot; the scratch variant behaves
@@ -1381,14 +1406,14 @@ differently (Table~\ref{tab:snr-sweep}).}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.85\textwidth]{figs/snr_sweep_accuracy_ci.png}
-\caption{Multi-seed classification accuracy versus SNR. ``N-EMD
+\caption{Multi-seed classification accuracy versus SNR. ``NAFB
 (default, e2e)'' (red) is the single proposed configuration from
 Table~\ref{tab:snr-sweep}: scratch analyzer, $107$\,k MLP head
 matching the VMD$+$MLP (big) head, $\lambda_{\text{phys}} = 0.1$.
 Ablations (small head, $\lambda_{\text{phys}} = 0$) are listed in
 Table~\ref{tab:snr-sweep} but are not plotted here. Cheap baselines:
-$5$ seeds. N-EMD: $3$ seeds. Error bars are one standard deviation.
-At SNR $3$\,dB, N-EMD (default) beats VMD$+$MLP (big) by $+2.2$\,pp;
+$5$ seeds. NAFB: $3$ seeds. Error bars are one standard deviation.
+At SNR $3$\,dB, NAFB (default) beats VMD$+$MLP (big) by $+2.2$\,pp;
 at $10$ and $20$\,dB, VMD$+$MLP (big) leads by $3.3$ and $3.6$\,pp in
 the near-ceiling regime (raw CNN $> 99$\,\%). Generic learnable
 filter banks (Mel-FB, SincNet) underperform decomposition-specific
@@ -1416,7 +1441,7 @@ regimes on a sample class-A test signal.}
 \subsection{Biomedical Validation: Pupillometry}
 \label{subsec:pupil}
 
-We apply N-EMD (trained on synthetic AM--FM composites) and the EMD
+We apply NAFB (trained on synthetic AM--FM composites) and the EMD
 and VMD baselines to the OpenNeuro \texttt{ds003838} pupillometry
 dataset~\cite{ds003838} to test whether
 Propositions~\ref{prop:recon}--\ref{prop:nonneg} transfer to real
@@ -1425,13 +1450,14 @@ training signal. Preprocessing: blink removal, bandpass
 $0.01$--$10$\,Hz, resampling to $50$\,Hz, 4-second epochs.
 
 \paragraph{The architectural guarantees transfer cleanly.}
-On $200$ held-out epochs, N-EMD's orthogonality index is
-$0.015 \pm 0.060$ and its energy ratio is $0.988 \pm 0.043$
-(Propositions~\ref{prop:recon} and~\ref{prop:energy} hold within
-numerical tolerance on data the analyzer has never seen). VMD's
+On $200$ held-out epochs, NAFB's orthogonality index is
+$0.015 \pm 0.060$ and its energy ratio is $0.988 \pm 0.043$ ---
+approximate but near the theoretical targets of Propositions
+\ref{prop:recon} and \ref{prop:energy}, within numerical tolerance
+on data the analyzer has never seen. VMD's
 orthogonality drifts to $0.131 \pm 0.084$ and its energy ratio drops
 to $0.866 \pm 0.140$; EMD's energy ratio blows up to $3.7 \pm 10.3$
-(non-convergent sifting on short biomedical epochs). N-EMD's
+(non-convergent sifting on short biomedical epochs). NAFB's
 guarantees are the only ones that behave the same on synthetic and
 real data. Fig.~\ref{fig:pupil-decomp} shows an example epoch: the
 four bandpass filters carve the $0$--$25$\,Hz signal into disjoint
@@ -1442,7 +1468,7 @@ nothing above $10$\,Hz to isolate).
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.85\textwidth]{figs/pupillometry_decomposition.png}
-\caption{N-EMD decomposition of an example pupillary-response epoch
+\caption{NAFB decomposition of an example pupillary-response epoch
 from OpenNeuro ds003838. Top: raw trace. Rows 2--5: the four
 bandpass-filtered IMFs (low, mid-low, mid-high, high), plus a
 residual. The high-frequency IMF shows amplitudes of order $10^{-5}$:
@@ -1454,33 +1480,42 @@ hold on real biomedical data without retraining.}
 \label{fig:pupil-decomp}
 \end{figure*}
 
-\paragraph{Classification on this dataset is not separable.}
+\paragraph{Classification with our linear-bandpass features is not separable.}
 As a secondary check we attempted three classification formulations
 (2-class control vs.\ memory, 3-class load level, 6-class
-condition$\times$group) under a subject-level split. None of the
-tested pipelines --- including the raw CNN that reaches $99$\,\% on
-the synthetic benchmark --- exceeds the majority-class baseline by a reliable margin: 2-class accuracy is
+condition$\times$group) under a subject-level split with our
+decomposition-then-MLP pipelines and a raw-trace 1D CNN. None exceeds
+the majority-class baseline by a reliable margin: 2-class accuracy is
 $0.667 \pm 0.001$ with balanced accuracy pinned at $0.500$ (every
 pipeline predicts majority); 3-class and 6-class are within $\pm 4$
-percentage points of their respective chance rates. The null is
-consistent across every decomposition-based pipeline and the raw-CNN
-baseline, which points to a dataset-level property (single pupillary
-traces without concurrent covariates do not carry class-discriminative
-information here) rather than a method failure. We include this as a
-sanity check, not as a proposed application of N-EMD.
+percentage points of their respective chance rates. This says
+something about our feature choice, not about the dataset: published
+work using non-linear dynamical-feature extractors such as the
+Catch22 canonical time-series set combined with gradient-boosted tree
+classifiers reports substantially above-chance accuracy on related
+pupillometry tasks. The nine scalar summaries per IMF used by our
+feature-based pipelines (log-energy, spectral centroid, spectral
+bandwidth) capture only second-order spectral structure and
+evidently miss the higher-order, non-linear dynamics that carry
+cognitive-load information in this signal class. We include this
+experiment as a transfer-of-guarantees check (decomposition quality
+carries over; see the OI/ER numbers above) rather than as a
+downstream application; a fair comparison of NAFB against richer
+feature sets (Catch22, Hilbert instantaneous-frequency statistics,
+or a deeper CNN on the IMF stack) is a natural next experiment.
 
 % ---------------------------------------------------------------------
 \subsection{Computational Cost}
 \label{subsec:cost}
 
 Per-signal inference time on a single CPU thread (in-distribution set,
-$T = 1024$, $f_{s} = 1000$ Hz): EMD $7.4$~ms, N-EMD $8.0$~ms, VMD
+$T = 1024$, $f_{s} = 1000$ Hz): EMD $7.4$~ms, NAFB $8.0$~ms, VMD
 $10.7$~ms. The three are comparable at single-signal scale, because
-N-EMD's forward pass is dominated by one rFFT, one convolutional
+NAFB's forward pass is dominated by one rFFT, one convolutional
 analyzer, one softmax, and one irFFT. The advantage appears at batch
-scale: N-EMD's forward pass vectorises trivially across a batch and
+scale: NAFB's forward pass vectorises trivially across a batch and
 amortises the analyzer's compute, whereas VMD runs a fresh ADMM
-optimisation for every signal. On a batch of $200$ signals, N-EMD's
+optimisation for every signal. On a batch of $200$ signals, NAFB's
 wall-clock is under $0.2$~s; VMD's is $2.1$~s. The benefit compounds
 at training, where a batch passes in a single forward call.
 
@@ -1499,13 +1534,13 @@ None of these experiments required a GPU.
 
 \paragraph{Mode-mixing gap.}
 On pure decomposition quality (Section~\ref{subsec:generalization}),
-VMD beats N-EMD on the mode-mixing metric by $0.1$--$0.3$ points
+VMD beats NAFB on the mode-mixing metric by $0.1$--$0.3$ points
 across every held-out distribution. We have not engineered around
 this. VMD's per-signal ADMM optimisation places $K$ centre frequencies
-exactly where the signal asks for them; N-EMD's amortised analyzer
+exactly where the signal asks for them; NAFB's amortised analyzer
 places them wherever one forward pass through a shared network can.
-Our claim is not that N-EMD is the best unsupervised decomposition
-method; it is that N-EMD is the first differentiable decomposition
+Our claim is not that NAFB is the best unsupervised decomposition
+method; it is that NAFB is the first differentiable decomposition
 whose architectural guarantees are proved rather than empirical, and
 that this differentiability pays for itself on downstream tasks
 (Section~\ref{sec:taskaware}). Mode mixing measured per se is the
@@ -1513,7 +1548,7 @@ wrong success metric when the decomposition serves a task.
 
 \paragraph{SNR-regime dependence.}
 Against the head-matched VMD$+$MLP (big) baseline, the single-
-configuration N-EMD (scratch, big MLP head, default
+configuration NAFB (scratch, big MLP head, default
 $\lambda_{\text{phys}} = 0.1$) beats the baseline at SNR $3$\,dB
 (means $94.83$ vs.\ $92.67$, $+2.2$\,pp) and loses by $3.3$ and
 $3.6$\,pp at $10$ and $20$\,dB, where every decomposition-based
@@ -1526,7 +1561,7 @@ Section~\ref{sec:taskaware} shows that further tuning (notably
 $\lambda_{\text{phys}} = 0$ for scratch at clean SNR) can narrow or
 reverse the $10$--$20$\,dB gap but adds a configuration knob; we do
 not include it in the default pipeline. A hybrid deployment that
-switches between VMD$+$MLP (big) and end-to-end N-EMD based on
+switches between VMD$+$MLP (big) and end-to-end NAFB based on
 estimated SNR is a natural direction but outside the scope of a
 single-method paper.
 
@@ -1568,7 +1603,7 @@ component. This is a structural property of the frequency-domain
 approach, not of our architecture in particular. Synchrosqueezing-style
 time-frequency ridge extraction is the correct tool when individual
 chirps must be tracked as units. A two-stage pipeline that feeds
-N-EMD's bandpass output into a ridge extractor is a promising
+NAFB's bandpass output into a ridge extractor is a promising
 combination.
 
 \paragraph{Scope of the experimental claims.}
@@ -1601,7 +1636,7 @@ decomposition uncertainty in low-SNR regimes.
 \label{sec:conclusion}
 % =====================================================================
 
-We have presented Neural Empirical Mode Decomposition, a differentiable
+We have presented Neural Adaptive Filter Bank, a differentiable
 signal decomposition built around a softmax partition-of-unity over
 $K$ learned bandpass filters. The architecture provides three
 properties as consequences of its construction rather than as outcomes
@@ -1610,7 +1645,7 @@ Cauchy--Schwarz bound on total component energy
 (Proposition~\ref{prop:energy}), and non-negative bandpass filter
 responses (Proposition~\ref{prop:nonneg}). On a multi-seed three-class
 benchmark with a head-matched VMD$+$MLP baseline, the default
-single-configuration N-EMD classifier beats the baseline at SNR
+single-configuration NAFB classifier beats the baseline at SNR
 $3$\,dB ($+2.2$~pp, mean $\pm$ std over three training runs) and
 loses by $3.3$ and $3.6$~pp at $10$ and $20$\,dB, where every
 decomposition-based method sits above $92$\,\% and the raw CNN above
@@ -1626,7 +1661,7 @@ a non-convex optimisation. Architectural constraints do. The practical
 summary is simple. If one needs a fixed interpretable decomposition,
 classical methods suffice. If one needs an interpretable
 \emph{and trainable} decomposition --- one that can be reshaped by a
-downstream task without losing its physical reading --- N-EMD
+downstream task without losing its physical reading --- NAFB
 occupies a gap that was not previously filled.
 
 % =====================================================================
@@ -1740,11 +1775,10 @@ Wall-clock                 & $\sim\!45$ minutes \\
 
 Code, trained checkpoints, experiment drivers, and this paper source
 are available at \url{https://github.com/aousabdo/nemd}. The
-repository is private at the time of submission; reviewer access can
-be granted on request, and the repository will be made public upon
-acceptance. All experiments
-reported in the paper run on CPU. Our test suite contains $125$ tests
-and is run on every change.
+repository is public and contains the analyzer source, trained
+checkpoints, the experiment drivers used for each figure and table,
+and the paper source. All experiments reported in the paper run on
+CPU or Apple-silicon MPS; no GPU is required.
 
 % ---------------------------------------------------------------------
 \section{Additional Details}
